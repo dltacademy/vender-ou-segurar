@@ -177,6 +177,11 @@ function renderFlow(root, flow) {
       lines.push(`${i + 1}. ${p.title}`);
       if (p.text) lines.push(`   ${p.text.replace(/<[^>]+>/g, "")}`);
     });
+    if (flow.convert) {
+      lines.push("");
+      lines.push("🎁 Presente por responder: " + flow.convert.headline);
+      lines.push(getRefLink());
+    }
     lines.push("");
     lines.push("Gerado em: " + CONFIG.siteUrl);
     return lines.join("\n");
@@ -293,7 +298,7 @@ function renderFlow(root, flow) {
       block.appendChild(ul);
     }
     const btns = h("div", "btn-row");
-    const ref = h("a", "btn btn-primary", c.ctaLabel || "Abrir conta com desconto →");
+    const ref = h("a", "btn btn-primary", c.ctaLabel || "Abrir conta com cashback vitalício →");
     ref.href = getRefLink();
     ref.target = "_blank";
     ref.rel = "nofollow noopener";
