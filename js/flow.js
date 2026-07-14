@@ -185,7 +185,7 @@ const FLOW = {
       findings.push({
         severity: 1,
         title: "Você mantém essa posição em outra corretora",
-        text: "Não muda a decisão de vender ou segurar — mas se decidir mexer na posição, vale comparar a taxa que você paga hoje com o desconto do link abaixo.",
+        text: "Não muda a decisão de vender ou segurar — mas não dá pra transferir essa posição pra Binance nem 'migrar' a conta. Se no futuro quiser abrir uma conta nova lá (além da que já tem), o link abaixo dá cashback vitalício nas taxas.",
       });
     }
 
@@ -204,21 +204,25 @@ const FLOW = {
         eyebrow: "MEU PROTOCOLO DE DECISÃO",
         headline: headline,
         lines: [sublabel, "Educacional — não é recomendação de investimento"],
-        headlineColor: tone === "bad" ? "#f87171" : "#4ade80",
+        headlineColor: tone === "bad" ? "#f87171" : "#6EE7A8",
+        coupon: {
+          label: "PRESENTE POR RESPONDER",
+          offerText: "Cashback vitalício\nnas taxas Binance",
+        },
       },
     };
   },
 
   convert: {
-    tag: "Depois de decidir",
-    headline: "Se decidir mexer na posição, faça com desconto de taxa",
-    sub: "Abrindo conta nova ou migrando de outra corretora — o desconto vale nos dois casos.",
+    tag: "Presente por responder",
+    headline: "Cashback vitalício nas taxas, se ainda não tem conta",
+    sub: "Vale pra quem ainda não tem conta na Binance — cashback em toda taxa, sem prazo de validade, pra sempre atrelado ao seu cadastro.",
     offers: [
-      "Desconto de taxa permanente pelo link",
+      "Cashback vitalício nas taxas (não é desconto só na entrada — vale pra sempre)",
       "Chamada de 15min pra revisar sua posição e o protocolo junto comigo",
       "Sem sinais, sem promessa de lucro — só gestão de risco de verdade",
     ],
-    ctaLabel: "Abrir/migrar conta com desconto →",
+    ctaLabel: "Abrir conta com cashback vitalício →",
     tgLabel: "💬 Revisar minha posição",
     tgPrefill: "Vim pelo 'Vender ou Segurar?' — quero revisar minha posição",
   },
