@@ -181,13 +181,29 @@ const FLOW = {
     }
 
     // achados adicionais, sempre que aplicável, independente do veredito principal
+    const jaTemBinance = a.corretora === "binance";
+
     if (a.corretora === "outra") {
       findings.push({
         severity: 1,
         title: "Você mantém essa posição em outra corretora",
-        text: "Não muda a decisão de vender ou segurar — mas não dá pra transferir essa posição pra Binance nem 'migrar' a conta. Se no futuro quiser abrir uma conta nova lá (além da que já tem), o link abaixo dá cashback vitalício nas taxas.",
+        text: "Não muda a decisão de vender ou segurar. Se um dia quiser abrir conta na Binance (plataforma diferente, verificação de identidade separada), o link abaixo dá cashback vitalício nas taxas — mas isso não move nem afeta a posição que você já tem.",
       });
     }
+
+    // Quem já tem conta na Binance não tem como abrir outra: a verificação de
+    // identidade é única por pessoa, não por conta. Ver BRAND.md "Erros já
+    // cometidos" — nunca ofereça o link de indicação nesse caso.
+    const convertOverride = jaTemBinance
+      ? {
+          tag: "Você já é cliente Binance",
+          headline: "Não tem como abrir outra conta pra ganhar o cashback",
+          sub: "A verificação de identidade da Binance é única por pessoa — uma vez feita, não dá pra repetir numa conta nova. O link de indicação só vale pra quem ainda não passou por esse cadastro. Isso não afeta em nada sua decisão de vender ou segurar acima.",
+          hideRef: true,
+          tgLabel: "💬 Revisar minha posição",
+          tgPrefill: "Vim pelo 'Vender ou Segurar?' — já tenho conta Binance, quero revisar minha posição",
+        }
+      : undefined; // undefined = usa o flow.convert estático abaixo (caso elegível pro link)
 
     return {
       headline,
@@ -200,15 +216,21 @@ const FLOW = {
       ],
       findings,
       plan,
+      convertOverride,
       shareCard: {
         eyebrow: "MEU PROTOCOLO DE DECISÃO",
         headline: headline,
         lines: [sublabel, "Educacional — não é recomendação de investimento"],
         headlineColor: tone === "bad" ? "#f87171" : "#6EE7A8",
-        coupon: {
-          label: "PRESENTE POR RESPONDER",
-          offerText: "Cashback vitalício\nnas taxas Binance",
-        },
+        coupon: jaTemBinance
+          ? {
+              label: "PRESENTE POR RESPONDER",
+              offerText: "Chamada de 15min\npra revisar sua posição",
+            }
+          : {
+              label: "PRESENTE POR RESPONDER",
+              offerText: "Cashback vitalício\nnas taxas Binance",
+            },
       },
     };
   },

@@ -284,7 +284,11 @@ function renderFlow(root, flow) {
     card.appendChild(btns);
     root.appendChild(card);
 
-    if (flow.convert) root.appendChild(renderConvert(flow.convert));
+    // report.convertOverride (definido em buildReport, com base nas respostas) tem
+    // prioridade sobre o flow.convert estático — ver BRAND.md "Erros já cometidos":
+    // nunca ofereça "abra sua conta" pra quem já respondeu que tem conta na Binance.
+    const convert = report.convertOverride !== undefined ? report.convertOverride : flow.convert;
+    if (convert) root.appendChild(renderConvert(convert));
   }
 
   function renderConvert(c) {
@@ -298,12 +302,16 @@ function renderFlow(root, flow) {
       block.appendChild(ul);
     }
     const btns = h("div", "btn-row");
-    const ref = h("a", "btn btn-primary", c.ctaLabel || "Abrir conta com cashback vitalício →");
-    ref.href = getRefLink();
-    ref.target = "_blank";
-    ref.rel = "nofollow noopener";
-    ref.addEventListener("click", () => track("clique_ref"));
-    btns.appendChild(ref);
+    // c.hideRef: quando o link de indicação não se aplica (ex.: pessoa já tem
+    // identidade verificada na Binance — não dá pra abrir uma segunda conta).
+    if (!c.hideRef) {
+      const ref = h("a", "btn btn-primary", c.ctaLabel || "Abrir conta com cashback vitalício →");
+      ref.href = getRefLink();
+      ref.target = "_blank";
+      ref.rel = "nofollow noopener";
+      ref.addEventListener("click", () => track("clique_ref"));
+      btns.appendChild(ref);
+    }
     if (CONFIG.telegramUsername) {
       const tg = h("a", "btn btn-telegram", c.tgLabel || "💬 Falar no Telegram");
       tg.href = getTelegramLink(c.tgPrefill || "");
