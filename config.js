@@ -25,7 +25,7 @@ const CONFIG = {
   goatCounterSite: "",
 
   // URL pública final do site (preencher após o deploy — usada em cards/OG)
-  siteUrl: "https://dltacademy.github.io/vender-ou-segurar/",
+  siteUrl: "https://vender-ou-segurar.dlt.academy/",
 
   // Marca
   brand: "dltacademy",

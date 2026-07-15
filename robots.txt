@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://dltacademy.github.io/vender-ou-segurar/sitemap.xml
+Sitemap: https://vender-ou-segurar.dlt.academy/sitemap.xml
