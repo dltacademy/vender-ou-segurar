@@ -48,6 +48,8 @@ const CARD_FORMATS = {
  *   (caixa de cupom tracejada com a oferta + link). Recomendado sempre que o
  *   resultado leva a um CTA de cadastro — ver BRAND.md.
  * @param {boolean} [opts.showFooter=true] mostra rodapé simples quando NÃO há coupon
+ * @param {string} [opts.footerLabel] texto acima da URL no rodapé simples (default "Teste em:" —
+ *   trocar pra "Leia em:" em og-image de post de blog, por exemplo)
  * @param {(ctx, w, h) => void} [opts.customDraw] hook pra desenho extra (gráficos, ícones)
  */
 function generateCard(opts) {
@@ -106,7 +108,7 @@ function generateCard(opts) {
   if (opts.coupon) {
     drawCouponBox(ctx, width, height, opts.coupon);
   } else if (opts.showFooter !== false) {
-    drawCardFooter(ctx, width, height);
+    drawCardFooter(ctx, width, height, opts.footerLabel);
   }
 
   return canvas;
@@ -169,12 +171,12 @@ function drawCouponBox(ctx, width, height, coupon) {
   ctx.fillText("Resgatar em: " + CONFIG.siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, ""), cx, cy);
 }
 
-function drawCardFooter(ctx, width, height) {
+function drawCardFooter(ctx, width, height, label) {
   ctx.textAlign = "center";
   const cx = width / 2;
   ctx.font = `600 ${Math.round(width * 0.028)}px system-ui, sans-serif`;
   ctx.fillStyle = "#4A8DF8";
-  ctx.fillText("Teste em:", cx, height * 0.855);
+  ctx.fillText(label || "Teste em:", cx, height * 0.855);
   ctx.font = `700 ${Math.round(width * 0.031)}px system-ui, sans-serif`;
   ctx.fillStyle = "#E8EDF7";
   ctx.fillText(CONFIG.siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, ""), cx, height * 0.895);
