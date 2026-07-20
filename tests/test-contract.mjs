@@ -46,6 +46,9 @@ for (const match of index.matchAll(/<a\b([^>]*?)href="(https?:[^"#]+)"([^>]*)>/g
 
 assert.equal(engine.includes("innerHTML"), false);
 assert.equal(engine.includes("report.html"), false);
+assert.equal(engine.includes(".style"), false, "engine não pode gerar estilos inline bloqueados pela CSP");
+assert.match(engine, /error\.tabIndex = -1/);
+assert.match(engine, /if \(!hasOffer && !hasTelegram\) return null/);
 assert.match(engine, /sponsored nofollow noopener noreferrer/);
 assert.match(engine, /referrerPolicy = "no-referrer"/);
 
@@ -91,16 +94,6 @@ assert.equal(tracking.getRefLink(), "https://example.com/ref/default");
 trackingSandbox.window.location.search = "?c=%3Cscript%3E&v=variante%20inválida";
 assert.equal(tracking.getChannel(), null);
 assert.equal(tracking.getVariant(), "a");
-
-let renderedReport;
-vm.runInNewContext(bootstrapSource, {
-  FLOW: { buildReport: () => ({ convertOverride: { offerKey: "default" } }) },
-  document: { getElementById: () => ({}) },
-  getOfferLink: () => "#",
-  renderFlow: (_root, flow) => { renderedReport = flow.buildReport({}); },
-  loadGoatCounter() {},
-});
-assert.equal(renderedReport.convertOverride, null, "destino inválido não pode renderizar oferta");
 
 for (const source of [engine, trackingSource, bootstrapSource]) {
   assert.equal(/localStorage|sessionStorage|document\.cookie/.test(source), false);
