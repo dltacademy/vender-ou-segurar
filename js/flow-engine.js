@@ -142,6 +142,7 @@ function renderFlow(root, flow) {
 
     const error = element("p", "form-error");
     error.setAttribute("role", "alert");
+    error.tabIndex = -1;
     error.hidden = true;
     card.appendChild(error);
 
@@ -227,8 +228,7 @@ function renderFlow(root, flow) {
     }
 
     if (report.findings && report.findings.length) {
-      const list = element("div");
-      list.style.marginTop = "20px";
+      const list = element("div", "report-findings");
       report.findings.forEach((finding) => {
         const block = element("div", `finding sev-${finding.severity || 2}`);
         block.appendChild(element("div", "finding-title", finding.title));
@@ -274,9 +274,7 @@ function renderFlow(root, flow) {
     }
 
     if (report.extraText) {
-      const extra = element("p", "section-desc", report.extraText);
-      extra.style.marginTop = "16px";
-      card.appendChild(extra);
+      card.appendChild(element("p", "section-desc report-extra", report.extraText));
     }
 
     const actions = element("div", "btn-row");
@@ -300,8 +298,9 @@ function renderFlow(root, flow) {
     card.appendChild(actions);
     root.appendChild(card);
 
-    if (convert) {
-      root.appendChild(renderConvert(convert));
+    const conversionBlock = convert ? renderConvert(convert) : null;
+    if (conversionBlock) {
+      root.appendChild(conversionBlock);
       track(`roteador_resultado_${convert.offerKey || "default"}`);
     } else {
       track("roteador_resultado_sem_oferta");
@@ -309,33 +308,35 @@ function renderFlow(root, flow) {
   }
 
   function renderConvert(config) {
+    const offerKey = config.offerKey || "default";
+    const offerUrl = config.hideRef ? "#" : getOfferLink(offerKey);
+    const hasOffer = Boolean(offerUrl && offerUrl !== "#");
+    const hasTelegram = config.publicTelegram === true && isTelegramConfigured();
+    if (!hasOffer && !hasTelegram) return null;
+
     const block = element("div", "card convert-block visible");
     if (config.tag) block.appendChild(element("span", "tag s2", config.tag));
     block.appendChild(element("div", "convert-headline", config.headline));
     if (config.sub) block.appendChild(element("div", "convert-sub", config.sub));
 
-    if (config.offers && config.offers.length) {
+    if (hasOffer && config.offers && config.offers.length) {
       const list = element("ul", "offer-list");
       config.offers.forEach((item) => list.appendChild(element("li", "", item)));
       block.appendChild(list);
     }
 
     const actions = element("div", "btn-row");
-    if (!config.hideRef) {
-      const offerKey = config.offerKey || "default";
-      const url = getOfferLink(offerKey);
-      if (url && url !== "#") {
-        const link = element("a", "btn btn-primary", config.ctaLabel || "Ver condições →");
-        link.href = url;
-        link.target = "_blank";
-        link.rel = "sponsored nofollow noopener noreferrer";
-        link.referrerPolicy = "no-referrer";
-        link.addEventListener("click", () => track(`clique_oferta_${offerKey}_principal`));
-        actions.appendChild(link);
-      }
+    if (hasOffer) {
+      const link = element("a", "btn btn-primary", config.ctaLabel || "Ver condições →");
+      link.href = offerUrl;
+      link.target = "_blank";
+      link.rel = "sponsored nofollow noopener noreferrer";
+      link.referrerPolicy = "no-referrer";
+      link.addEventListener("click", () => track(`clique_oferta_${offerKey}_principal`));
+      actions.appendChild(link);
     }
 
-    if (config.publicTelegram === true && isTelegramConfigured()) {
+    if (hasTelegram) {
       const telegram = element("a", "btn btn-telegram", config.tgLabel || "Falar no Telegram");
       telegram.href = getTelegramLink(config.tgPrefill || "");
       telegram.target = "_blank";
@@ -346,11 +347,13 @@ function renderFlow(root, flow) {
 
     block.appendChild(actions);
     if (config.note) block.appendChild(element("p", "fine-print", config.note));
-    block.appendChild(element(
-      "p",
-      "affiliate-disclosure",
-      config.disclosure || "Este é um link de afiliado. A DLT Academy pode receber comissão se uma conta elegível for criada e utilizada. As condições exibidas no cadastro prevalecem."
-    ));
+    if (hasOffer) {
+      block.appendChild(element(
+        "p",
+        "affiliate-disclosure",
+        config.disclosure || "Este é um link de afiliado. A DLT Academy pode receber comissão se uma conta elegível for criada e utilizada. As condições exibidas no cadastro prevalecem."
+      ));
+    }
     return block;
   }
 
