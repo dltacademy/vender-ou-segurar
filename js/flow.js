@@ -1,10 +1,3 @@
-// ============================================================
-// "Vender ou Segurar?" — protocolo de decisão pra quem já tem posição.
-// Dor real do holder: não é falta de informação de mercado, é decisão
-// emocional sem estrutura. O fluxo separa sinal (tese mudou de verdade?
-// necessidade real de liquidez?) de ruído (pânico, ganância, ansiedade).
-// ============================================================
-
 const FLOW = {
   slug: "vender-ou-segurar",
   reportTitle: "Seu protocolo de decisão",
@@ -13,22 +6,32 @@ const FLOW = {
   steps: [
     {
       title: "Sua posição hoje",
-      description: "Contexto rápido antes de entrar no motivo.",
+      description: "Onde a posição está e possuir conta em outra plataforma são informações diferentes.",
       fields: [
         {
           id: "corretora",
-          label: "Onde você mantém essa posição hoje?",
+          label: "Onde essa posição está hoje?",
           type: "radio",
           required: true,
           options: [
             { value: "binance", label: "Binance" },
             { value: "outra", label: "Outra corretora" },
-            { value: "carteira", label: "Carteira própria (self-custody)" },
+            { value: "carteira", label: "Carteira própria" },
+          ],
+        },
+        {
+          id: "jaTemBinance",
+          label: "Você já possui uma conta Binance, mesmo que a posição esteja em outro lugar?",
+          type: "radio",
+          required: true,
+          options: [
+            { value: "sim", label: "Sim" },
+            { value: "nao", label: "Não" },
           ],
         },
         {
           id: "variacao",
-          label: "Como está sua posição agora?",
+          label: "Como a posição está em relação ao valor investido?",
           type: "radio",
           required: true,
           options: [
@@ -40,212 +43,270 @@ const FLOW = {
       ],
     },
     {
-      title: "O motivo",
-      description: "Seja honesto — isso não vai a lugar nenhum, é só pra você mesmo.",
+      title: "O motivo da decisão",
+      description: "O motivo ajuda a separar necessidade financeira, mudança real e desconforto emocional.",
       fields: [
         {
           id: "motivo",
-          label: "Por que você está pensando em vender AGORA?",
+          label: "Por que você está pensando em vender agora?",
           type: "radio",
           required: true,
           options: [
             { value: "medo", label: "O preço caiu e tenho medo de perder mais" },
-            { value: "ganancia", label: "O preço subiu e quero travar o lucro" },
-            { value: "necessidade", label: "Preciso do dinheiro pra outra coisa" },
-            { value: "checando", label: "Só estou checando, não decidi nada" },
+            { value: "ganancia", label: "O preço subiu e quero realizar parte do ganho" },
+            { value: "necessidade", label: "Preciso do dinheiro para outra finalidade" },
+            { value: "checando", label: "Estou apenas revisando a decisão" },
           ],
         },
       ],
     },
     {
       title: "Sua tese original",
-      description: "O motivo de ter comprado ainda existe, ou só o preço mudou?",
+      description: "Preço e tese podem mudar por motivos diferentes.",
       fields: [
         {
           id: "tese",
-          label: "O que mudou desde que você comprou?",
+          label: "O que mudou desde a compra?",
           type: "radio",
           required: true,
           options: [
-            { value: "so-preco", label: "Só o preço — minha razão de ter comprado continua a mesma" },
-            { value: "tese-mudou", label: "A razão mudou de verdade (o motivo original não existe mais)" },
-            { value: "sem-tese", label: "Nunca tive uma razão clara, comprei por impulso" },
+            { value: "so-preco", label: "Só o preço; minha razão original continua" },
+            { value: "tese-mudou", label: "A razão original mudou de forma relevante" },
+            { value: "sem-tese", label: "Nunca defini uma razão clara" },
           ],
         },
       ],
     },
     {
-      title: "Sua cabeça",
-      description: "Isso pesa mais do que parece.",
+      title: "Tamanho e tranquilidade",
+      description: "Uma posição que domina sua atenção pode estar maior que sua tolerância real.",
       fields: [
         {
           id: "sono",
-          label: "Você consegue dormir tranquilo sabendo que tem esse dinheiro em cripto?",
+          label: "Como essa posição afeta sua tranquilidade?",
           type: "radio",
           required: true,
           options: [
-            { value: "tranquilo", label: "Sim, tranquilo" },
-            { value: "mais-ou-menos", label: "Mais ou menos, penso nisso de vez em quando" },
-            { value: "tira-o-sono", label: "Não, isso me tira o sono" },
+            { value: "tranquilo", label: "Consigo lidar com a oscilação" },
+            { value: "mais-ou-menos", label: "Penso nisso com frequência" },
+            { value: "tira-o-sono", label: "Isso afeta meu sono ou rotina" },
           ],
         },
       ],
     },
   ],
 
-  buildReport(a) {
+  buildReport(answers) {
     const findings = [];
     const plan = [];
-    let headline, sublabel, tone;
+    let headline = "Você pode revisar sem agir agora";
+    let sublabel = "Observar e organizar critérios também é uma decisão";
+    let tone = "good";
+    let verdict = "nao-agir";
 
-    // Precedência do veredito: sono > necessidade real > tese mudou > pânico > ganância > sem tese > só checando
-    if (a.sono === "tira-o-sono") {
-      headline = "Sua posição está grande demais pra você";
-      sublabel = "Isso vale mais que qualquer análise de mercado";
+    if (answers.sono === "tira-o-sono") {
+      headline = "A exposição pode estar maior que sua tolerância";
+      sublabel = "Tranquilidade e capacidade de manter o plano são dados relevantes";
       tone = "bad";
+      verdict = "reduzir-exposicao";
       findings.push({
         severity: 3,
-        title: "O problema não é o mercado, é o tamanho da posição",
-        text: "Se isso tira seu sono, nenhuma previsão de preço vai resolver — o ativo certo pro seu perfil é aquele que você consegue segurar sem sofrer. Reduzir a posição pra um tamanho que não afeta seu sono é uma decisão válida, independente de qualquer outra resposta acima.",
+        title: "O tamanho da posição pode ser o problema principal",
+        text: "Quando a exposição afeta sono ou rotina, reduzir gradualmente ou revisar o tamanho pode ser mais simples do que buscar uma previsão de preço.",
       });
-      plan.push({ title: "Defina o tamanho que te deixa tranquilo", text: "Não é sobre vender tudo ou nada — é sobre achar a fração da posição que você segura sem ansiedade." });
-      plan.push({ title: "Venda só essa fração, não a posição toda", text: "Reduzir não é desistir da tese — é ajustar o risco ao seu perfil real, não ao perfil que você gostaria de ter." });
-    } else if (a.motivo === "necessidade") {
-      headline = "Isso não é sobre mercado, é sobre liquidez";
-      sublabel = "A pergunta certa não é 'é hora de vender', é 'quanto eu realmente preciso'";
-      tone = "good";
+      plan.push({
+        title: "Definir o nível de exposição que você consegue acompanhar",
+        text: "Considere despesas, reserva, concentração e impacto emocional. O objetivo é encontrar um tamanho compatível com sua vida real, não cumprir uma regra universal.",
+      });
+      plan.push({
+        title: "Comparar redução parcial e saída completa",
+        text: "Avalie custos, impostos, liquidez e o que mudaria em sua tranquilidade em cada alternativa antes de executar qualquer ordem.",
+      });
+    } else if (answers.motivo === "necessidade") {
+      headline = "A decisão começa pela necessidade de liquidez";
+      sublabel = "Venda necessária e opinião sobre o mercado são decisões diferentes";
+      verdict = "liquidez";
       findings.push({
         severity: 2,
-        title: "Separe a decisão de mercado da decisão de liquidez",
-        text: "Precisar do dinheiro é motivo legítimo — mas venda só o valor necessário, não a posição inteira por impulso de resolver logo.",
+        title: "Liquidez real pode justificar uma venda",
+        text: "Quando o dinheiro tem outra finalidade concreta, estimar o valor necessário pode evitar que uma necessidade específica vire uma decisão de tudo ou nada.",
       });
-      plan.push({ title: "Calcule exatamente quanto precisa", text: "Não arredonde pra cima 'por segurança' — isso é vender mais cripto do que precisa." });
-      plan.push({ title: "Venda só esse valor", text: "O resto da posição não tem relação com essa necessidade — mantenha a tese original rodando pro restante." });
-      plan.push({ title: "Considere o efeito fiscal", text: "Dependendo do valor, pode haver imposto sobre o ganho — confira antes de vender pra não ter surpresa na hora de declarar." });
-    } else if (a.tese === "tese-mudou") {
-      headline = "Sua tese mudou — isso é motivo real pra vender";
-      sublabel = "Vender por mudança de tese é diferente de vender por medo do preço";
-      tone = "good";
+      plan.push({
+        title: "Estimar o valor realmente necessário",
+        text: "Inclua custos, prazo e margem para imprevistos. Depois compare vender somente a parcela necessária com outras fontes de liquidez disponíveis.",
+      });
+      plan.push({
+        title: "Revisar custos e efeito fiscal",
+        text: "Taxas, spread, prazo de saque e tributação podem alterar o valor líquido recebido. Verifique as regras aplicáveis antes da execução.",
+      });
+    } else if (answers.tese === "tese-mudou") {
+      headline = "Uma mudança de tese merece revisão consciente";
+      sublabel = "Manter apenas para recuperar preço não substitui a razão original";
+      verdict = "tese-mudou";
       findings.push({
         severity: 1,
-        title: "Vender por tese é decisão, não reação",
-        text: "Se o motivo original de ter comprado não existe mais, manter a posição só porque 'espera recuperar' é apostar, não investir.",
+        title: "Mudança de tese é diferente de oscilação de preço",
+        text: "Se o motivo original deixou de existir, redução ou saída podem ser alternativas coerentes. A ferramenta não define qual delas é adequada ao seu caso.",
       });
-      plan.push({ title: "Escreva por que a tese mudou", text: "Antes de vender, registre em uma frase o que exatamente deixou de ser verdade — isso vira critério pra próximas decisões." });
-      plan.push({ title: "Venda com um plano, não de uma vez por impulso", text: "Considere vender em partes ao longo de alguns dias em vez de tudo de uma vez — reduz o risco de vender no pior preço do dia." });
-    } else if (a.motivo === "medo" && a.tese === "so-preco") {
-      headline = "Isso parece pânico, não decisão";
-      sublabel = "O padrão nº 1 que trava investidor no prejuízo";
+      plan.push({
+        title: "Registrar o que deixou de ser verdade",
+        text: "Escreva a evidência que mudou e quais informações poderiam invalidar sua conclusão. Isso reduz a chance de confundir medo com revisão de tese.",
+      });
+      plan.push({
+        title: "Planejar a execução antes de agir",
+        text: "Compare redução, saída, prazo, custos e liquidez. Uma decisão fundamentada não exige executar tudo no mesmo momento.",
+      });
+    } else if (answers.motivo === "medo" && answers.tese === "so-preco") {
+      headline = "O medo pode estar conduzindo a decisão";
+      sublabel = "O preço mudou, mas sua razão original continua segundo suas respostas";
       tone = "bad";
+      verdict = "pausa";
       findings.push({
         severity: 3,
-        title: "Você está prestes a vender por medo, não por mudança de tese",
-        text: "O preço caiu, mas a razão de ter comprado continua a mesma segundo sua própria resposta. Vender agora, nessas condições, é o padrão clássico de venda no pânico — sair embaixo depois de ter entrado achando que fazia sentido.",
+        title: "Emoção e risco real ainda precisam ser separados",
+        text: "Vontade de agir para interromper o desconforto não prova que a tese piorou. Uma pausa e uma revisão escrita podem melhorar a qualidade da decisão.",
       });
-      plan.push({ title: "Regra das 24 horas", text: "Proibido decidir qualquer coisa (vender, comprar, mexer) no mesmo dia de uma queda forte. Espere 24h com a cabeça fria." });
-      plan.push({ title: "Releia por que você comprou", text: "Se a razão original continua de pé, o preço caindo não é motivo pra vender — é só o mercado fazendo o que mercado de risco faz." });
-      plan.push({ title: "Se ainda quiser vender depois das 24h", text: "Tudo bem — mas venda por decisão fria, não no calor da queda. Considere vender uma fração, não tudo de uma vez." });
-    } else if (a.motivo === "ganancia") {
-      headline = "Trave uma parte, não tudo";
-      sublabel = "Realizar lucro não precisa ser tudo ou nada";
-      tone = "good";
+      plan.push({
+        title: "Criar uma pausa antes de executar",
+        text: "Registre o que mudou financeiramente, o que você está sentindo e qual risco concreto quer reduzir. Retome a decisão depois dessa separação.",
+      });
+      plan.push({
+        title: "Revisar a tese e o tamanho da posição",
+        text: "Se a tese continua, compare não agir e reduzir exposição. Se surgiram fatos novos, trate-os como possível mudança de tese.",
+      });
+    } else if (answers.motivo === "ganancia") {
+      headline = "Realização parcial é uma alternativa possível"
+      sublabel = "Você não precisa acertar o melhor preço para organizar o risco";
+      verdict = "realizar";
       findings.push({
         severity: 1,
-        title: "Vender tudo no topo (ou no que parece o topo) é apostar contra si mesmo",
-        text: "Ninguém acerta o topo de forma consistente. Travar uma fração do lucro reduz o arrependimento dos dois lados: se continuar subindo, você ainda tem posição; se cair, você já garantiu parte do ganho.",
+        title: "Realizar ganho não precisa ser uma decisão binária",
+        text: "Manter tudo e vender tudo produzem exposições diferentes. Uma redução parcial pode ser comparada com ambas sem presumir um percentual ideal.",
       });
-      plan.push({ title: "Defina uma fração fixa pra realizar", text: "Ex.: vender 20-30% da posição em lucro, manter o resto rodando com a tese original." });
-      plan.push({ title: "Separe o valor realizado da posição restante", text: "O que foi vendido não volta pra decisão — trate como capital já resolvido, não como 'ainda posso perder se eu não tivesse vendido'." });
-    } else if (a.tese === "sem-tese") {
-      headline = "Você nunca teve um plano — comece por aí";
-      sublabel = "Antes de decidir vender, decida por que você está segurando";
+      plan.push({
+        title: "Definir o objetivo da realização",
+        text: "Decida se a prioridade é recuperar capital, reduzir concentração, criar liquidez ou diminuir ansiedade. O objetivo ajuda a dimensionar a alternativa.",
+      });
+      plan.push({
+        title: "Comparar cenários antes da ordem",
+        text: "Considere como você reagiria se o preço subisse, ficasse parecido ou caísse depois da venda. Inclua custos e impostos na comparação.",
+      });
+    } else if (answers.tese === "sem-tese") {
+      headline = "Falta um critério para manter ou vender"
+      sublabel = "Sem uma razão explícita, cada oscilação pode gerar uma nova decisão";
       tone = "bad";
+      verdict = "definir-tese";
       findings.push({
         severity: 2,
-        title: "Sem tese, toda decisão vira reação ao preço",
-        text: "Comprar por impulso e decidir vender por impulso é o mesmo problema em dois momentos diferentes. Definir uma razão AGORA (mesmo que atrasada) já muda a qualidade da próxima decisão.",
+        title: "A ausência de tese aumenta decisões reativas",
+        text: "Antes de escolher uma ordem, vale definir horizonte, função da posição, riscos aceitos e fatos que justificariam uma revisão.",
       });
-      plan.push({ title: "Escreva agora por que está segurando", text: "Uma frase: horizonte de tempo, o que faria você vender, o que faria você comprar mais." });
-      plan.push({ title: "Só decida vender depois de ter essa frase escrita", text: "Sem isso, qualquer decisão de hoje é só reação ao gráfico, não estratégia." });
+      plan.push({
+        title: "Escrever uma tese mínima",
+        text: "Registre por que mantém a posição, por quanto tempo pretende revisá-la e quais mudanças fariam a decisão deixar de fazer sentido.",
+      });
+      plan.push({
+        title: "Comparar a posição com sua situação financeira",
+        text: "Considere reserva, dívidas, concentração, liquidez e tranquilidade. Uma tese de ativo não corrige uma exposição incompatível com sua vida.",
+      });
     } else {
-      headline = "Você ainda não decidiu nada — e tá tudo bem";
-      sublabel = "Só estar checando já é mais disciplina que a maioria tem";
-      tone = "good";
-      findings.push({
-        severity: 1,
-        title: "Checar sem agir por impulso é o comportamento certo",
-        text: "A maioria decide no calor do momento. Você está avaliando antes — isso sozinho já reduz bastante o risco de erro.",
+      plan.push({
+        title: "Revisar a tese em uma data definida",
+        text: "Se não há necessidade financeira, mudança de tese ou exposição incompatível, não agir agora pode ser uma alternativa legítima.",
       });
-      plan.push({ title: "Releia sua tese original", text: "Se ela continua de pé, não há motivo pra ação nenhuma agora." });
-      plan.push({ title: "Defina um gatilho claro pro futuro", text: "Em vez de checar todo dia, defina o que faria você agir (ex.: queda de X%, notícia específica) e só revise quando isso acontecer." });
-    }
-
-    // achados adicionais, sempre que aplicável, independente do veredito principal
-    const jaTemBinance = a.corretora === "binance";
-
-    if (a.corretora === "outra") {
-      findings.push({
-        severity: 1,
-        title: "Você mantém essa posição em outra corretora",
-        text: "Não muda a decisão de vender ou segurar. Se um dia quiser abrir conta na Binance (plataforma diferente, verificação de identidade separada), o link abaixo dá cashback vitalício nas taxas — mas isso não move nem afeta a posição que você já tem.",
+      plan.push({
+        title: "Definir gatilhos de revisão",
+        text: "Escolha fatos verificáveis que justificariam nova análise, em vez de transformar cada oscilação em uma decisão.",
       });
     }
 
-    // Quem já tem conta na Binance não tem como abrir outra: a verificação de
-    // identidade é única por pessoa, não por conta. Ver BRAND.md "Erros já
-    // cometidos" — nunca ofereça o link de indicação nesse caso.
-    const convertOverride = jaTemBinance
+    if (answers.variacao === "prejuizo") {
+      findings.push({
+        severity: 2,
+        title: "Prejuízo pode aumentar aversão à perda",
+        text: "O preço de compra é relevante para impostos e resultado, mas não deve ser o único critério para manter uma tese que mudou ou vender uma tese que continua.",
+      });
+    } else if (answers.variacao === "lucro") {
+      findings.push({
+        severity: 1,
+        title: "Lucro pode aumentar medo de devolver ganhos",
+        text: "Separar objetivo de realização, concentração e necessidade de liquidez ajuda a evitar uma decisão guiada apenas pelo resultado acumulado.",
+      });
+    } else {
+      plan.push({
+        title: "Confirmar custo médio e resultado antes de decidir",
+        text: "Use extratos e registros confiáveis. Incerteza sobre o resultado pode distorcer a percepção de risco e o efeito tributário.",
+      });
+    }
+
+    if (answers.corretora === "carteira") {
+      plan.push({
+        title: "Planejar a transferência antes de uma venda",
+        text: "Confirme rede, endereço, taxa, prazo e compatibilidade da plataforma de destino. Faça teste pequeno quando a transferência for necessária.",
+      });
+    } else if (answers.corretora === "outra") {
+      plan.push({
+        title: "Revisar custos e regras da plataforma atual",
+        text: "Compare taxa, spread, liquidez, saque e disponibilidade no seu país antes de mover a posição ou abrir outra conta.",
+      });
+    } else {
+      plan.push({
+        title: "Usar a conta existente sem buscar novo cadastro",
+        text: "Você já possui a plataforma onde a posição está. Revise segurança, custos e execução sem tentar obter benefício de conta nova.",
+      });
+    }
+
+    if (answers.sono === "mais-ou-menos" && verdict !== "reduzir-exposicao") {
+      findings.push({
+        severity: 2,
+        title: "A exposição merece acompanhamento",
+        text: "Pensar frequentemente na posição pode indicar concentração ou ausência de critérios. Inclua tranquilidade na próxima revisão do tamanho.",
+      });
+    }
+
+    const eligible =
+      answers.jaTemBinance === "nao" &&
+      answers.corretora === "outra" &&
+      answers.motivo === "checando" &&
+      answers.tese === "so-preco" &&
+      answers.sono === "tranquilo";
+
+    const convertOverride = eligible
       ? {
-          tag: "Você já é cliente Binance",
-          headline: "Não tem como abrir outra conta pra ganhar o cashback",
-          sub: "A verificação de identidade da Binance é única por pessoa — uma vez feita, não dá pra repetir numa conta nova. O link de indicação só vale pra quem ainda não passou por esse cadastro. Isso não afeta em nada sua decisão de vender ou segurar acima.",
-          hideRef: true,
-          tgLabel: "💬 Revisar minha posição",
-          tgPrefill: "Vim pelo 'Vender ou Segurar?' — já tenho conta Binance, quero revisar minha posição",
+          offerKey: "default",
+          tag: "Comparação opcional de plataforma",
+          headline: "Conta nova, somente se comparar outra plataforma fizer sentido",
+          sub: "A oferta apareceu porque você informou que usa outra corretora, não possui Binance e está apenas revisando a decisão, sem necessidade de liquidez, mudança de tese ou desconforto elevado.",
+          offers: [
+            "Cadastre-se pelo link de indicação e receba cashback vitalício em parte das taxas elegíveis.",
+            "Válido para contas novas e elegíveis.",
+            "Abrir conta não obriga mover a posição, depositar ou operar.",
+          ],
+          ctaLabel: "Ver condições para conta nova →",
+          note: "Compare país, produtos, custos e benefício exibido no cadastro. A decisão sobre sua posição permanece separada desta oferta.",
+          disclosure: "Este é um link de afiliado. A DLT Academy pode receber comissão se uma conta elegível for criada e utilizada. As condições exibidas pela Binance prevalecem.",
         }
-      : undefined; // undefined = usa o flow.convert estático abaixo (caso elegível pro link)
+      : null;
 
     return {
       headline,
       sublabel,
       tone,
       stats: [
-        { value: a.variacao === "lucro" ? "Lucro" : a.variacao === "prejuizo" ? "Prejuízo" : "Incerto", label: "situação atual" },
-        { value: a.corretora === "binance" ? "Binance" : a.corretora === "outra" ? "Outra corretora" : "Carteira própria", label: "onde está" },
-        { value: plan.length, label: "passos no protocolo" },
+        { value: answers.variacao === "lucro" ? "Lucro" : answers.variacao === "prejuizo" ? "Prejuízo" : "Incerto", label: "situação informada" },
+        { value: answers.corretora === "binance" ? "Binance" : answers.corretora === "outra" ? "Outra corretora" : "Carteira própria", label: "onde está" },
+        { value: eligible ? "Oferta opcional" : "Sem oferta", label: "roteamento" },
       ],
       findings,
       plan,
       convertOverride,
+      extraText: "Este protocolo organiza informações para reflexão. Não fornece ordem personalizada, não prevê preço e não substitui avaliação financeira, tributária ou jurídica individual.",
       shareCard: {
         eyebrow: "MEU PROTOCOLO DE DECISÃO",
-        headline: headline,
+        headline,
         lines: [sublabel, "Educacional — não é recomendação de investimento"],
         headlineColor: tone === "bad" ? "#f87171" : "#6EE7A8",
-        coupon: jaTemBinance
-          ? {
-              label: "PRESENTE POR RESPONDER",
-              offerText: "Chamada de 15min\npra revisar sua posição",
-            }
-          : {
-              label: "PRESENTE POR RESPONDER",
-              offerText: "Cashback vitalício\nnas taxas Binance",
-            },
       },
     };
-  },
-
-  convert: {
-    tag: "Presente por responder",
-    headline: "Cashback vitalício nas taxas, se ainda não tem conta",
-    sub: "Vale pra quem ainda não tem conta na Binance — cashback em toda taxa, sem prazo de validade, pra sempre atrelado ao seu cadastro.",
-    offers: [
-      "Cashback vitalício nas taxas (não é desconto só na entrada — vale pra sempre)",
-      "Chamada de 15min pra revisar sua posição e o protocolo junto comigo",
-      "Sem sinais, sem promessa de lucro — só gestão de risco de verdade",
-    ],
-    ctaLabel: "Abrir conta com cashback vitalício →",
-    tgLabel: "💬 Revisar minha posição",
-    tgPrefill: "Vim pelo 'Vender ou Segurar?' — quero revisar minha posição",
   },
 };
