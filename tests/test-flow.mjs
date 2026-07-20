@@ -70,12 +70,10 @@ for (const corretora of exchanges) {
           for (const sono of sleepAnswers) {
             combinations += 1;
             const result = report({ corretora, jaTemBinance, variacao, motivo, tese, sono });
-            const shouldOffer =
-              corretora === "outra" &&
-              jaTemBinance === "nao" &&
-              motivo === "checando" &&
-              tese === "so-preco" &&
-              sono === "tranquilo";
+            // Regra do operador (20/07/2026): a trava cobre somente quem já
+            // tem conta — e país, onde a pergunta existir. Motivo, tese e sono
+            // mudam o texto da oferta, não a existência dela.
+            const shouldOffer = jaTemBinance === "nao";
             assert.equal(
               Boolean(result.convertOverride),
               shouldOffer,
