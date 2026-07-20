@@ -9,6 +9,8 @@ const CONFIG = {
     "tg-ads": "https://www.binance.com/register?ref=BOSS2026",
   },
 
+  allowedVariants: ["a", "b"],
+
   offers: {
     default: {
       name: "Binance",
