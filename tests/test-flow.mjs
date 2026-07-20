@@ -49,7 +49,9 @@ const verdicts = [
 assert.equal(new Set(verdicts).size, 7, "os sete vereditos existentes devem continuar distintos");
 
 const expectedFields = ["corretora", "jaTemBinance", "variacao", "motivo", "tese", "sono"];
-const actualFields = flow.steps.flatMap((step) => step.fields.map((field) => field.id));
+const actualFields = Array.from(flow.steps, (step) =>
+  Array.from(step.fields, (field) => field.id)
+).flat();
 assert.deepEqual(actualFields, expectedFields);
 
 const variants = {
