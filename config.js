@@ -1,14 +1,6 @@
-// ============================================================
-// CONFIG — copie pra config.js e edite. É o ÚNICO arquivo que
-// precisa ser tocado pra lançar uma ferramenta nova (regra do kit).
-// ============================================================
-
 const CONFIG = {
-  // Link de afiliado padrão — usado quando não há ?c= reconhecido
   refDefault: "https://www.binance.com/register?ref=BOSS2026",
 
-  // Um link ref por canal/campanha — rastreamento por origem (1 ref por canal).
-  // Chave = valor do parâmetro ?c= na URL. Edite/adicione livremente.
   refByChannel: {
     grupos: "https://www.binance.com/register?ref=BOSS2026",
     whats: "https://www.binance.com/register?ref=BOSS2026",
@@ -17,16 +9,19 @@ const CONFIG = {
     "tg-ads": "https://www.binance.com/register?ref=BOSS2026",
   },
 
-  // Username do Telegram para contato/chamada (sem @)
-  // Vazio = o botão de Telegram não é renderizado (evita link quebrado).
+  allowedVariants: ["a", "b"],
+
+  offers: {
+    default: {
+      name: "Binance",
+      url: "https://www.binance.com/register?ref=BOSS2026",
+      code: "BOSS2026",
+    },
+  },
+
+  // Vazio por decisão de produto: nenhum contato público está configurado.
   telegramUsername: "",
-
-  // Código de site do GoatCounter (goatcounter.com — grátis, sem cookies)
   goatCounterSite: "",
-
-  // URL pública final do site (preencher após o deploy — usada em cards/OG)
   siteUrl: "https://vender-ou-segurar.dlt.academy/",
-
-  // Marca
   brand: "dltacademy",
 };

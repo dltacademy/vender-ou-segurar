@@ -1,17 +1,60 @@
-# Vender ou Segurar? — descubra se é decisão ou pânico
+# Vender ou Segurar?
 
-4 perguntas rápidas pra saber se vender agora é uma decisão racional ou uma reação emocional — grátis, sem cadastro, roda no seu navegador.
+Ferramenta educacional para organizar emoção, risco real, necessidade de liquidez, tese e tamanho da exposição antes de revisar uma posição em cripto.
 
-Construído com o [ferramenta-kit](https://github.com/dltacademy/ferramenta-kit) — página única, zero backend, zero build.
+Este lote preserva os vereditos existentes. Ele não adiciona derivativos, proteção, sinal, previsão ou lógica de campanha.
 
-## Antes de divulgar
+## Elegibilidade
 
-1. Copiar `config.example.js` → `config.js` e preencher: links ref por canal, username do Telegram, código do GoatCounter.
-2. `og-image.png` (1200x630) de marca já vem pronto. Opcional: gerar um específico pra esta ferramenta com `generateCard({format:"og", ...})` do `js/canvas-cards.js` e sobrescrever.
-3. Habilitar GitHub Pages no repo (Settings → Pages → Source: GitHub Actions).
-4. Testar local: `python3 -m http.server 8000`.
-5. Divulgar com `?c=<canal>` em cada lugar diferente pra rastrear conversão por origem.
+“Onde a posição está” e “já possui Binance” são perguntas separadas.
 
-## Estrutura
+A oferta de conta nova é removida para:
 
-Ver o [README do kit](https://github.com/dltacademy/ferramenta-kit) pra entender o padrão completo.
+- cliente Binance;
+- posição em carteira própria;
+- necessidade de liquidez;
+- mudança de tese;
+- decisão motivada por medo;
+- posição que afeta sono ou rotina.
+
+Uma comparação opcional de plataforma só aparece no caso estreito em que a pessoa usa outra corretora, não possui Binance, está apenas revisando a decisão, mantém a tese e relata tranquilidade com a exposição.
+
+## Estado de publicação
+
+A ferramenta permanece acessível para revisão, com indexação bloqueada por `<meta name="robots" content="noindex">`. O `robots.txt` usa `Allow: /` para que crawlers possam ler essa diretiva.
+
+O portal e o sitemap não são alterados neste lote.
+
+## Arquitetura
+
+- HTML/CSS/JavaScript vanilla;
+- zero backend, zero build e zero dependência externa nova;
+- respostas processadas somente no navegador;
+- CSP restritiva e JavaScript executável somente em arquivos externos;
+- tracking opcional por `?c=<canal>&v=<variante>` com parâmetros sanitizados;
+- contato público desabilitado enquanto `telegramUsername` estiver vazio.
+
+## Testes
+
+```bash
+python3 -m py_compile security_check.py
+python3 security_check.py .
+node --check config.js
+find js -name '*.js' -print0 | xargs -0 -n1 node --check
+node tests/test-flow.mjs
+node tests/test-contract.mjs
+```
+
+O workflow `Validate` executa esses gates em pull requests. O deploy do GitHub Pages continua restrito a pushes em `main`.
+
+## Gates humanos
+
+Antes de merge ou divulgação:
+
+1. revisar desktop estreito/largo e celular;
+2. testar teclado, foco, console, copiar plano e download do card;
+3. abrir o link afiliado em sessão deslogada e confirmar benefício, país e elegibilidade;
+4. revisar os vereditos como conteúdo educacional, sem ordem personalizada;
+5. obter aprovação independente e fazer merge deliberado.
+
+URL canônica: `https://vender-ou-segurar.dlt.academy/`.
