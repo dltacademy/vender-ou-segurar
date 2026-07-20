@@ -25,28 +25,69 @@ assert.ok(eligible.convertOverride, "comparação não urgente e elegível deve 
 assert.match(JSON.stringify(eligible.convertOverride), /parte das taxas elegíveis/i);
 assert.match(JSON.stringify(eligible.convertOverride), /contas novas e elegíveis/i);
 
-const blockedRoutes = [
-  [{ jaTemBinance: "sim" }, "cliente Binance"],
-  [{ corretora: "carteira" }, "carteira própria"],
-  [{ motivo: "necessidade" }, "liquidez"],
-  [{ motivo: "medo" }, "medo"],
-  [{ tese: "tese-mudou" }, "tese alterada"],
-  [{ sono: "tira-o-sono" }, "exposição excessiva"],
+const exactVerdicts = [
+  [{ sono: "tira-o-sono" }, "A exposição pode estar maior que sua tolerância"],
+  [{ motivo: "necessidade" }, "A decisão começa pela necessidade de liquidez"],
+  [{ tese: "tese-mudou" }, "Uma mudança de tese merece revisão consciente"],
+  [{ motivo: "medo", tese: "so-preco" }, "O medo pode estar conduzindo a decisão"],
+  [{ motivo: "ganancia" }, "Realização parcial é uma alternativa possível"],
+  [{ tese: "sem-tese" }, "Falta um critério para manter ou vender"],
+  [{}, "Você pode revisar sem agir agora"],
 ];
-for (const [overrides, label] of blockedRoutes) {
-  assert.equal(report(overrides).convertOverride, null, `${label} não recebe CTA`);
+for (const [overrides, expectedHeadline] of exactVerdicts) {
+  assert.equal(report(overrides).headline, expectedHeadline);
 }
+assert.equal(new Set(exactVerdicts.map(([overrides]) => report(overrides).headline)).size, 7);
 
-const verdicts = [
-  report({ sono: "tira-o-sono" }).headline,
-  report({ motivo: "necessidade" }).headline,
-  report({ tese: "tese-mudou" }).headline,
-  report({ motivo: "medo", tese: "so-preco" }).headline,
-  report({ motivo: "ganancia" }).headline,
-  report({ tese: "sem-tese" }).headline,
-  report().headline,
-];
-assert.equal(new Set(verdicts).size, 7, "os sete vereditos existentes devem continuar distintos");
+assert.equal(
+  report({ sono: "tira-o-sono", motivo: "necessidade", tese: "tese-mudou" }).headline,
+  "A exposição pode estar maior que sua tolerância",
+  "impacto no sono tem precedência"
+);
+assert.equal(
+  report({ motivo: "necessidade", tese: "tese-mudou" }).headline,
+  "A decisão começa pela necessidade de liquidez",
+  "liquidez tem precedência sobre tese"
+);
+assert.equal(
+  report({ motivo: "ganancia", tese: "sem-tese" }).headline,
+  "Realização parcial é uma alternativa possível",
+  "realização preserva a precedência editorial existente"
+);
+
+const exchanges = ["binance", "outra", "carteira"];
+const binanceAnswers = ["sim", "nao"];
+const variations = ["lucro", "prejuizo", "naosei"];
+const motives = ["medo", "ganancia", "necessidade", "checando"];
+const theses = ["so-preco", "tese-mudou", "sem-tese"];
+const sleepAnswers = ["tranquilo", "mais-ou-menos", "tira-o-sono"];
+let combinations = 0;
+for (const corretora of exchanges) {
+  for (const jaTemBinance of binanceAnswers) {
+    for (const variacao of variations) {
+      for (const motivo of motives) {
+        for (const tese of theses) {
+          for (const sono of sleepAnswers) {
+            combinations += 1;
+            const result = report({ corretora, jaTemBinance, variacao, motivo, tese, sono });
+            const shouldOffer =
+              corretora === "outra" &&
+              jaTemBinance === "nao" &&
+              motivo === "checando" &&
+              tese === "so-preco" &&
+              sono === "tranquilo";
+            assert.equal(
+              Boolean(result.convertOverride),
+              shouldOffer,
+              `oferta incorreta: ${corretora}/${jaTemBinance}/${variacao}/${motivo}/${tese}/${sono}`
+            );
+          }
+        }
+      }
+    }
+  }
+}
+assert.equal(combinations, 648);
 
 const expectedFields = ["corretora", "jaTemBinance", "variacao", "motivo", "tese", "sono"];
 const actualFields = Array.from(flow.steps, (step) =>
@@ -92,4 +133,4 @@ for (const term of ["futuros", "hedge", "short", "liquidação"]) {
 }
 assert.equal(/tgLabel|tgPrefill|publicTelegram/.test(source), false, "fluxo não deve prometer contato");
 
-console.log("Flow matrix: OK — 7 vereditos, 6 campos e 6 bloqueios de oferta");
+console.log("Flow matrix: OK — 7 vereditos, precedências e 648 combinações de oferta");
