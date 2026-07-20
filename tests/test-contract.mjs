@@ -95,6 +95,31 @@ trackingSandbox.window.location.search = "?c=%3Cscript%3E&v=variante%20inválida
 assert.equal(tracking.getChannel(), null);
 assert.equal(tracking.getVariant(), "a");
 
+let renderedReport;
+vm.runInNewContext(bootstrapSource, {
+  Set,
+  FLOW: {
+    buildReport: () => ({
+      stats: [
+        { value: "Conta elegível", label: "próximo passo" },
+        { value: "Oferta opcional", label: "roteamento" },
+      ],
+      convertOverride: { offerKey: "default" },
+    }),
+  },
+  document: { getElementById: () => ({}) },
+  getOfferLink: () => "#",
+  isTelegramConfigured: () => false,
+  renderFlow: (_root, flow) => { renderedReport = flow.buildReport({}); },
+  loadGoatCounter() {},
+});
+assert.equal(renderedReport.convertOverride, null, "destino inválido não pode manter oferta no relatório");
+assert.deepEqual(
+  Array.from(renderedReport.stats, (stat) => stat.value),
+  ["Sem oferta", "Sem oferta"],
+  "fallback deve alinhar os indicadores do relatório"
+);
+
 for (const source of [engine, trackingSource, bootstrapSource]) {
   assert.equal(/localStorage|sessionStorage|document\.cookie/.test(source), false);
 }
