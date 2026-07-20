@@ -1,326 +1,356 @@
-// ============================================================
-// FLOW ENGINE — motor de guias/protocolos passo-a-passo.
-// ESTÁVEL: não edite este arquivo pra criar uma ferramenta nova.
-// Toda ferramenta é definida SÓ em js/flow.js (schema no FRAMEWORK.md
-// do kit). Uso: renderFlow(document.getElementById("flow-root"), FLOW)
-// Requer carregados antes: config.js, tracking.js, canvas-cards.js.
-//
-// Capacidades:
-//  - passos com campos range/number/text/select/radio
-//  - ramificação: showIf(answers) em passos E em campos
-//  - relatório: banner + stats + findings + PLANO passo-a-passo
-//    (checklist numerada com "copiar plano")
-//  - card compartilhável + bloco de conversão com link ref por canal
-// ============================================================
-
 function renderFlow(root, flow) {
   const answers = {};
-  let stepIndex = 0; // índice dentro dos passos VISÍVEIS
+  let stepIndex = 0;
 
-  flow.steps.forEach((s) =>
-    s.fields.forEach((f) => {
-      if (f.value !== undefined) answers[f.id] = f.value;
-    })
-  );
+  flow.steps.forEach((step) => {
+    step.fields.forEach((field) => {
+      if (field.value !== undefined) answers[field.id] = field.value;
+    });
+  });
 
-  function h(tag, cls, html) {
-    const e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (html !== undefined) e.innerHTML = html;
-    return e;
+  function element(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = String(text);
+    return node;
   }
 
   function visibleSteps() {
-    return flow.steps.filter((s) => !s.showIf || s.showIf(answers));
+    return flow.steps.filter((step) => !step.showIf || step.showIf(answers));
   }
 
   function visibleFields(step) {
-    return step.fields.filter((f) => !f.showIf || f.showIf(answers));
+    return step.fields.filter((field) => !field.showIf || field.showIf(answers));
   }
 
   function renderProgress(container, steps) {
-    const bar = h("div", "flow-progress");
-    steps.forEach((_, i) => {
-      bar.appendChild(h("span", "dot" + (i < stepIndex ? " done" : i === stepIndex ? " current" : "")));
+    const progress = element("div", "flow-progress");
+    steps.forEach((_, index) => {
+      const state = index < stepIndex ? " done" : index === stepIndex ? " current" : "";
+      progress.appendChild(element("span", `dot${state}`));
     });
-    bar.appendChild(h("span", "step-count", `passo ${stepIndex + 1} de ${steps.length}`));
-    container.appendChild(bar);
+    progress.appendChild(element("span", "step-count", `passo ${stepIndex + 1} de ${steps.length}`));
+    container.appendChild(progress);
   }
 
-  function renderField(f, container, onDynamicChange) {
-    const wrap = h("div", "control");
-    const label = h("div", "control-label");
-    label.appendChild(h("span", "", f.label));
-    const valueEl = h("strong");
-    label.appendChild(valueEl);
-    wrap.appendChild(label);
+  function renderField(field, container, onDynamicChange) {
+    const wrapper = element("div", "control");
+    const label = element("div", "control-label");
+    label.appendChild(element("span", "", field.label));
+    const liveValue = element("strong");
+    label.appendChild(liveValue);
+    wrapper.appendChild(label);
 
-    const fmt = f.format || ((v) => v);
+    const format = field.format || ((value) => value);
 
-    if (f.type === "range") {
+    if (field.type === "range") {
       const input = document.createElement("input");
       input.type = "range";
-      input.min = f.min;
-      input.max = f.max;
-      input.step = f.step || 1;
-      input.value = answers[f.id] !== undefined ? answers[f.id] : f.min;
-      answers[f.id] = Number(input.value);
-      valueEl.textContent = fmt(Number(input.value));
+      input.min = field.min;
+      input.max = field.max;
+      input.step = field.step || 1;
+      input.value = answers[field.id] !== undefined ? answers[field.id] : field.min;
+      input.setAttribute("aria-label", field.label);
+      answers[field.id] = Number(input.value);
+      liveValue.textContent = format(Number(input.value));
       input.addEventListener("input", () => {
-        answers[f.id] = Number(input.value);
-        valueEl.textContent = fmt(Number(input.value));
+        answers[field.id] = Number(input.value);
+        liveValue.textContent = format(Number(input.value));
       });
-      wrap.appendChild(input);
-    } else if (f.type === "number" || f.type === "text") {
-      const input = document.createElement("input");
-      input.type = f.type;
-      if (f.placeholder) input.placeholder = f.placeholder;
-      if (answers[f.id] !== undefined) input.value = answers[f.id];
-      input.addEventListener("input", () => {
-        answers[f.id] = f.type === "number" ? Number(input.value) : input.value;
+      wrapper.appendChild(input);
+    } else if (field.type === "select") {
+      const select = document.createElement("select");
+      select.setAttribute("aria-label", field.label);
+      field.options.forEach((option) => {
+        const item = document.createElement("option");
+        item.value = option.value !== undefined ? option.value : option;
+        item.textContent = option.label !== undefined ? option.label : option;
+        select.appendChild(item);
       });
-      wrap.appendChild(input);
-    } else if (f.type === "select") {
-      const sel = document.createElement("select");
-      f.options.forEach((o) => {
-        const opt = document.createElement("option");
-        opt.value = o.value !== undefined ? o.value : o;
-        opt.textContent = o.label !== undefined ? o.label : o;
-        sel.appendChild(opt);
-      });
-      if (answers[f.id] !== undefined) sel.value = answers[f.id];
-      answers[f.id] = sel.value;
-      sel.addEventListener("change", () => {
-        answers[f.id] = sel.value;
+      if (answers[field.id] !== undefined) select.value = answers[field.id];
+      answers[field.id] = select.value;
+      select.addEventListener("change", () => {
+        answers[field.id] = select.value;
         onDynamicChange();
       });
-      wrap.appendChild(sel);
-    } else if (f.type === "radio") {
-      const group = h("div", "radio-group");
-      f.options.forEach((o) => {
-        const val = o.value !== undefined ? o.value : o;
-        const btn = h("button", "", o.label !== undefined ? o.label : o);
-        btn.type = "button";
-        if (answers[f.id] === val) btn.classList.add("selected");
-        btn.addEventListener("click", () => {
-          answers[f.id] = val;
-          group.querySelectorAll("button").forEach((b) => b.classList.remove("selected"));
-          btn.classList.add("selected");
+      wrapper.appendChild(select);
+    } else if (field.type === "number" || field.type === "text") {
+      const input = document.createElement("input");
+      input.type = field.type;
+      input.setAttribute("aria-label", field.label);
+      if (field.placeholder) input.placeholder = field.placeholder;
+      if (answers[field.id] !== undefined) input.value = answers[field.id];
+      input.addEventListener("input", () => {
+        answers[field.id] = field.type === "number" ? Number(input.value) : input.value;
+      });
+      wrapper.appendChild(input);
+    } else if (field.type === "radio") {
+      const group = element("div", "radio-group");
+      group.setAttribute("role", "group");
+      group.setAttribute("aria-label", field.label);
+      field.options.forEach((option) => {
+        const value = option.value !== undefined ? option.value : option;
+        const button = element("button", "", option.label !== undefined ? option.label : option);
+        button.type = "button";
+        const selected = answers[field.id] === value;
+        button.classList.toggle("selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+        button.addEventListener("click", () => {
+          answers[field.id] = value;
+          group.querySelectorAll("button").forEach((peer) => {
+            const isSelected = peer === button;
+            peer.classList.toggle("selected", isSelected);
+            peer.setAttribute("aria-pressed", String(isSelected));
+          });
           onDynamicChange();
         });
-        group.appendChild(btn);
+        group.appendChild(button);
       });
-      wrap.appendChild(group);
+      wrapper.appendChild(group);
     }
-    container.appendChild(wrap);
+
+    container.appendChild(wrapper);
   }
 
-  function validateStep(step) {
-    for (const f of visibleFields(step)) {
-      if (f.required && (answers[f.id] === undefined || answers[f.id] === "" || answers[f.id] === null)) {
-        return f.label;
+  function missingRequiredField(step) {
+    for (const field of visibleFields(step)) {
+      const value = answers[field.id];
+      if (field.required && (value === undefined || value === null || value === "")) {
+        return field.label;
       }
     }
     return null;
   }
 
   function renderStep() {
-    root.innerHTML = "";
+    root.replaceChildren();
     const steps = visibleSteps();
-    if (stepIndex >= steps.length) stepIndex = steps.length - 1;
+    if (stepIndex >= steps.length) stepIndex = Math.max(0, steps.length - 1);
     const step = steps[stepIndex];
+    if (!step) return;
 
-    const card = h("div", "card");
+    const card = element("div", "card");
     renderProgress(card, steps);
-    card.appendChild(h("h2", "", step.title));
-    if (step.description) card.appendChild(h("p", "section-desc", step.description));
+    card.appendChild(element("h2", "", step.title));
+    if (step.description) card.appendChild(element("p", "section-desc", step.description));
 
-    const grid = h("div", "control-grid");
-    const hasDynamic = step.fields.some((f) => f.showIf) || flow.steps.some((s) => s.showIf);
-    const onDynamicChange = hasDynamic ? () => renderStep() : () => {};
-    visibleFields(step).forEach((f) => renderField(f, grid, onDynamicChange));
+    const grid = element("div", "control-grid");
+    const dynamic = step.fields.some((field) => field.showIf) || flow.steps.some((item) => item.showIf);
+    const onDynamicChange = dynamic ? renderStep : () => {};
+    visibleFields(step).forEach((field) => renderField(field, grid, onDynamicChange));
     card.appendChild(grid);
 
-    const btns = h("div", "btn-row");
+    const error = element("p", "form-error");
+    error.setAttribute("role", "alert");
+    error.hidden = true;
+    card.appendChild(error);
+
+    const actions = element("div", "btn-row");
     if (stepIndex > 0) {
-      const back = h("button", "btn-secondary", "← Voltar");
+      const back = element("button", "btn-secondary", "← Voltar");
+      back.type = "button";
       back.addEventListener("click", () => {
-        stepIndex--;
+        stepIndex -= 1;
         renderStep();
       });
-      btns.appendChild(back);
+      actions.appendChild(back);
     }
-    const isLast = stepIndex === steps.length - 1;
-    const next = h("button", "btn-primary", isLast ? flow.reportLabel || "Gerar meu plano →" : "Continuar →");
+
+    const last = stepIndex === steps.length - 1;
+    const next = element("button", "btn-primary", last ? flow.reportLabel || "Gerar meu plano →" : "Continuar →");
+    next.type = "button";
     next.addEventListener("click", () => {
-      const missing = validateStep(step);
+      const missing = missingRequiredField(step);
       if (missing) {
-        alert(`Preencha: ${missing}`);
+        error.textContent = `Preencha: ${missing}`;
+        error.hidden = false;
+        error.focus();
         return;
       }
-      if (isLast) {
+      if (last) {
         renderReport();
       } else {
-        stepIndex++;
-        track("flow_passo_" + (stepIndex + 1));
+        stepIndex += 1;
+        track(`flow_passo_${stepIndex + 1}`);
         renderStep();
       }
     });
-    btns.appendChild(next);
-    card.appendChild(btns);
+    actions.appendChild(next);
+    card.appendChild(actions);
     root.appendChild(card);
   }
 
-  function planAsText(report) {
-    const lines = [(flow.reportTitle || "Meu plano") + " — " + (CONFIG.brand || "")];
-    (report.plan || []).forEach((p, i) => {
-      lines.push(`${i + 1}. ${p.title}`);
-      if (p.text) lines.push(`   ${p.text.replace(/<[^>]+>/g, "")}`);
+  function planAsText(report, convert) {
+    const lines = [`${flow.reportTitle || "Meu plano"} — ${CONFIG.brand || ""}`];
+    (report.plan || []).forEach((item, index) => {
+      lines.push(`${index + 1}. ${item.title}`);
+      if (item.text) lines.push(`   ${item.text}`);
     });
-    if (flow.convert) {
-      lines.push("");
-      lines.push("🎁 Presente por responder: " + flow.convert.headline);
-      lines.push(getRefLink());
+    if (convert && !convert.hideRef) {
+      const offerUrl = getOfferLink(convert.offerKey || "default");
+      if (offerUrl && offerUrl !== "#") {
+        lines.push("", `Próximo passo: ${convert.headline}`, offerUrl);
+        lines.push("Link de afiliado: a DLT Academy pode receber comissão se uma conta elegível for criada e utilizada.");
+      }
     }
-    lines.push("");
-    lines.push("Gerado em: " + CONFIG.siteUrl);
+    lines.push("", `Gerado em: ${CONFIG.siteUrl}`);
     return lines.join("\n");
   }
 
   function renderReport() {
-    const report = flow.buildReport(answers);
+    const report = flow.buildReport({ ...answers });
+    const convert = report.convertOverride !== undefined ? report.convertOverride : flow.convert;
     track("relatorio_gerado");
-    root.innerHTML = "";
+    root.replaceChildren();
 
-    const card = h("div", "card");
-    card.appendChild(h("h2", "", flow.reportTitle || "Seu plano"));
+    const card = element("div", "card");
+    card.appendChild(element("h2", "", flow.reportTitle || "Seu plano"));
 
     if (report.headline) {
-      const banner = h("div", "result-banner " + (report.tone === "bad" ? "bad" : "good"));
-      const inner = h("div");
-      inner.appendChild(h("div", "big-stat", report.headline));
-      if (report.sublabel) inner.appendChild(h("div", "stat-label", report.sublabel));
+      const banner = element("div", `result-banner ${report.tone === "bad" ? "bad" : "good"}`);
+      const inner = element("div");
+      inner.appendChild(element("div", "big-stat", report.headline));
+      if (report.sublabel) inner.appendChild(element("div", "stat-label", report.sublabel));
       banner.appendChild(inner);
       card.appendChild(banner);
     }
 
     if (report.stats && report.stats.length) {
-      const row = h("div", "stat-row");
-      report.stats.forEach((s) => {
-        const box = h("div", "stat-box");
-        box.appendChild(h("div", "val", s.value));
-        box.appendChild(h("div", "label", s.label));
+      const row = element("div", "stat-row");
+      report.stats.forEach((stat) => {
+        const box = element("div", "stat-box");
+        box.appendChild(element("div", "val", stat.value));
+        box.appendChild(element("div", "label", stat.label));
         row.appendChild(box);
       });
       card.appendChild(row);
     }
 
     if (report.findings && report.findings.length) {
-      const list = h("div");
+      const list = element("div");
       list.style.marginTop = "20px";
-      report.findings.forEach((f) => {
-        const div = h("div", "finding sev-" + (f.severity !== undefined ? f.severity : 2));
-        div.appendChild(h("div", "finding-title", f.title));
-        div.appendChild(h("div", "finding-text", f.text));
-        list.appendChild(div);
+      report.findings.forEach((finding) => {
+        const block = element("div", `finding sev-${finding.severity || 2}`);
+        block.appendChild(element("div", "finding-title", finding.title));
+        block.appendChild(element("div", "finding-text", finding.text));
+        list.appendChild(block);
       });
       card.appendChild(list);
     }
 
     if (report.plan && report.plan.length) {
-      const planList = h("ol", "plan-list");
-      report.plan.forEach((p) => {
-        const li = h("li", "plan-step");
-        const label = h("label", "plan-check");
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.addEventListener("change", () => li.classList.toggle("done", cb.checked));
-        label.appendChild(cb);
-        const body = h("div", "plan-body");
-        body.appendChild(h("div", "plan-title", p.title));
-        if (p.text) body.appendChild(h("div", "plan-text", p.text));
+      const list = element("ol", "plan-list");
+      report.plan.forEach((item) => {
+        const entry = element("li", "plan-step");
+        const label = element("label", "plan-check");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.addEventListener("change", () => entry.classList.toggle("done", checkbox.checked));
+        label.appendChild(checkbox);
+        const body = element("div", "plan-body");
+        body.appendChild(element("div", "plan-title", item.title));
+        if (item.text) body.appendChild(element("div", "plan-text", item.text));
         label.appendChild(body);
-        li.appendChild(label);
-        planList.appendChild(li);
+        entry.appendChild(label);
+        list.appendChild(entry);
       });
-      card.appendChild(planList);
+      card.appendChild(list);
 
-      const copyBtn = h("button", "btn-secondary", "📋 Copiar plano");
-      copyBtn.addEventListener("click", () => {
-        navigator.clipboard.writeText(planAsText(report)).then(() => {
-          copyBtn.textContent = "✓ Copiado";
-          setTimeout(() => (copyBtn.textContent = "📋 Copiar plano"), 1500);
+      const copy = element("button", "btn-secondary", "📋 Copiar plano");
+      copy.type = "button";
+      copy.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(planAsText(report, convert));
+          copy.textContent = "✓ Copiado";
+          setTimeout(() => { copy.textContent = "📋 Copiar plano"; }, 1500);
           track("copiar_plano");
-        });
+        } catch (_) {
+          copy.textContent = "Não foi possível copiar";
+        }
       });
-      const btnRowPlan = h("div", "btn-row");
-      btnRowPlan.appendChild(copyBtn);
-      card.appendChild(btnRowPlan);
+      const row = element("div", "btn-row");
+      row.appendChild(copy);
+      card.appendChild(row);
     }
 
-    if (report.html) {
-      const extra = h("div");
+    if (report.extraText) {
+      const extra = element("p", "section-desc", report.extraText);
       extra.style.marginTop = "16px";
-      extra.innerHTML = report.html;
       card.appendChild(extra);
     }
 
-    const btns = h("div", "btn-row");
+    const actions = element("div", "btn-row");
     if (report.shareCard) {
-      const dl = h("button", "btn-secondary", "📥 Baixar card do resultado");
-      dl.addEventListener("click", () => {
+      const download = element("button", "btn-secondary", "📥 Baixar card do resultado");
+      download.type = "button";
+      download.addEventListener("click", () => {
         const canvas = generateCard({ format: "square", ...report.shareCard });
-        downloadCanvasAsPng(canvas, (flow.slug || "plano") + ".png");
+        downloadCanvasAsPng(canvas, `${flow.slug || "plano"}.png`);
         track("download_card");
       });
-      btns.appendChild(dl);
+      actions.appendChild(download);
     }
-    const redo = h("button", "btn-secondary", "↺ Refazer");
-    redo.addEventListener("click", () => {
+    const restart = element("button", "btn-secondary", "↺ Refazer");
+    restart.type = "button";
+    restart.addEventListener("click", () => {
       stepIndex = 0;
       renderStep();
     });
-    btns.appendChild(redo);
-    card.appendChild(btns);
+    actions.appendChild(restart);
+    card.appendChild(actions);
     root.appendChild(card);
 
-    // report.convertOverride (definido em buildReport, com base nas respostas) tem
-    // prioridade sobre o flow.convert estático — ver BRAND.md "Erros já cometidos":
-    // nunca ofereça "abra sua conta" pra quem já respondeu que tem conta na Binance.
-    const convert = report.convertOverride !== undefined ? report.convertOverride : flow.convert;
-    if (convert) root.appendChild(renderConvert(convert));
+    if (convert) {
+      root.appendChild(renderConvert(convert));
+      track(`roteador_resultado_${convert.offerKey || "default"}`);
+    } else {
+      track("roteador_resultado_sem_oferta");
+    }
   }
 
-  function renderConvert(c) {
-    const block = h("div", "card convert-block visible");
-    if (c.tag) block.appendChild(h("span", "tag s2", c.tag));
-    block.appendChild(h("div", "convert-headline", c.headline));
-    if (c.sub) block.appendChild(h("div", "convert-sub", c.sub));
-    if (c.offers && c.offers.length) {
-      const ul = h("ul", "offer-list");
-      c.offers.forEach((o) => ul.appendChild(h("li", "", o)));
-      block.appendChild(ul);
+  function renderConvert(config) {
+    const block = element("div", "card convert-block visible");
+    if (config.tag) block.appendChild(element("span", "tag s2", config.tag));
+    block.appendChild(element("div", "convert-headline", config.headline));
+    if (config.sub) block.appendChild(element("div", "convert-sub", config.sub));
+
+    if (config.offers && config.offers.length) {
+      const list = element("ul", "offer-list");
+      config.offers.forEach((item) => list.appendChild(element("li", "", item)));
+      block.appendChild(list);
     }
-    const btns = h("div", "btn-row");
-    // c.hideRef: quando o link de indicação não se aplica (ex.: pessoa já tem
-    // identidade verificada na Binance — não dá pra abrir uma segunda conta).
-    if (!c.hideRef) {
-      const ref = h("a", "btn btn-primary", c.ctaLabel || "Abrir conta com cashback vitalício →");
-      ref.href = getRefLink();
-      ref.target = "_blank";
-      ref.rel = "nofollow noopener";
-      ref.addEventListener("click", () => track("clique_ref"));
-      btns.appendChild(ref);
+
+    const actions = element("div", "btn-row");
+    if (!config.hideRef) {
+      const offerKey = config.offerKey || "default";
+      const url = getOfferLink(offerKey);
+      if (url && url !== "#") {
+        const link = element("a", "btn btn-primary", config.ctaLabel || "Ver condições →");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "sponsored nofollow noopener noreferrer";
+        link.referrerPolicy = "no-referrer";
+        link.addEventListener("click", () => track(`clique_oferta_${offerKey}_principal`));
+        actions.appendChild(link);
+      }
     }
-    if (CONFIG.telegramUsername) {
-      const tg = h("a", "btn btn-telegram", c.tgLabel || "💬 Falar no Telegram");
-      tg.href = getTelegramLink(c.tgPrefill || "");
-      tg.target = "_blank";
-      tg.rel = "nofollow noopener";
-      tg.addEventListener("click", () => track("clique_telegram"));
-      btns.appendChild(tg);
+
+    if (config.publicTelegram === true && isTelegramConfigured()) {
+      const telegram = element("a", "btn btn-telegram", config.tgLabel || "Falar no Telegram");
+      telegram.href = getTelegramLink(config.tgPrefill || "");
+      telegram.target = "_blank";
+      telegram.rel = "nofollow noopener noreferrer";
+      telegram.referrerPolicy = "no-referrer";
+      actions.appendChild(telegram);
     }
-    block.appendChild(btns);
+
+    block.appendChild(actions);
+    if (config.note) block.appendChild(element("p", "fine-print", config.note));
+    block.appendChild(element(
+      "p",
+      "affiliate-disclosure",
+      config.disclosure || "Este é um link de afiliado. A DLT Academy pode receber comissão se uma conta elegível for criada e utilizada. As condições exibidas no cadastro prevalecem."
+    ));
     return block;
   }
 
