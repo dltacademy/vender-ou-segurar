@@ -1,46 +1,81 @@
-// ============================================================
-// Tracking genérico por canal/variante + resolução de link ref.
-// Cada ferramenta define seu próprio objeto CONFIG (ver config.example.js)
-// com o formato: { refByChannel: {...}, refDefault, telegramUsername,
-// goatCounterSite, siteUrl, brand }.
-// ============================================================
+function readSafeParam(name) {
+  const value = new URLSearchParams(window.location.search).get(name);
+  return value && /^[A-Za-z0-9_-]{1,40}$/.test(value) ? value : null;
+}
 
 function getChannel() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("c") || null;
+  return readSafeParam("c");
 }
 
 function getVariant() {
-  const params = new URLSearchParams(window.location.search);
-  const v = params.get("v");
-  return v === "b" ? "b" : "a";
+  const allowed = Array.isArray(CONFIG.allowedVariants)
+    ? CONFIG.allowedVariants.filter((value) => typeof value === "string")
+    : [];
+  const fallback = allowed.includes("a") ? "a" : allowed[0] || "a";
+  const variant = readSafeParam("v");
+  return variant && allowed.includes(variant) ? variant : fallback;
+}
+
+function getSafeExternalUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.href : "#";
+  } catch (_) {
+    return "#";
+  }
 }
 
 function getRefLink() {
   const channel = getChannel();
-  if (channel && CONFIG.refByChannel && CONFIG.refByChannel[channel]) {
-    return CONFIG.refByChannel[channel];
+  const channelMap = CONFIG.refByChannel;
+  if (
+    channel &&
+    channelMap &&
+    Object.prototype.hasOwnProperty.call(channelMap, channel)
+  ) {
+    return getSafeExternalUrl(channelMap[channel]);
   }
-  return CONFIG.refDefault;
+  return getSafeExternalUrl(CONFIG.refDefault);
+}
+
+function getOfferLink(offerKey = "default") {
+  if (offerKey === "default") return getRefLink();
+  const offer = CONFIG.offers && CONFIG.offers[offerKey];
+  return offer && offer.url ? getSafeExternalUrl(offer.url) : "#";
+}
+
+function isTelegramConfigured() {
+  return Boolean(
+    CONFIG.telegramUsername &&
+    /^[A-Za-z0-9_]{5,32}$/.test(CONFIG.telegramUsername)
+  );
 }
 
 function getTelegramLink(prefill) {
+  if (!isTelegramConfigured()) return null;
   const base = `https://t.me/${CONFIG.telegramUsername}`;
   return prefill ? `${base}?text=${encodeURIComponent(prefill)}` : base;
 }
 
 function track(eventName) {
-  if (window.goatcounter && window.goatcounter.count) {
-    window.goatcounter.count({ path: eventName, event: true });
-  }
+  if (!window.goatcounter || !window.goatcounter.count) return;
+  const safeEvent = String(eventName).replace(/[^A-Za-z0-9_/-]/g, "_").slice(0, 120);
+  const channel = getChannel() || "direto";
+  const variant = getVariant();
+  window.goatcounter.count({
+    path: `${safeEvent}?c=${encodeURIComponent(channel)}&v=${encodeURIComponent(variant)}`,
+    event: true,
+  });
 }
 
-/** Chamar uma vez no final do <body>, depois de CONFIG estar definido. */
 function loadGoatCounter() {
-  if (!CONFIG.goatCounterSite) return;
-  const gc = document.createElement("script");
-  gc.async = true;
-  gc.setAttribute("data-goatcounter", "https://" + CONFIG.goatCounterSite + ".goatcounter.com/count");
-  gc.src = "//gc.zgo.at/count.js";
-  document.head.appendChild(gc);
+  if (!CONFIG.goatCounterSite || !/^[a-z0-9-]{1,63}$/.test(CONFIG.goatCounterSite)) return;
+  const script = document.createElement("script");
+  script.async = true;
+  script.setAttribute(
+    "data-goatcounter",
+    `https://${CONFIG.goatCounterSite}.goatcounter.com/count`
+  );
+  script.src = "https://gc.zgo.at/count.js";
+  document.head.appendChild(script);
 }
