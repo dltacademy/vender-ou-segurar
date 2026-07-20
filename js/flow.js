@@ -264,19 +264,29 @@ const FLOW = {
       });
     }
 
-    const eligible =
-      answers.jaTemBinance === "nao" &&
-      answers.corretora === "outra" &&
-      answers.motivo === "checando" &&
-      answers.tese === "so-preco" &&
-      answers.sono === "tranquilo";
+    // A trava de elegibilidade cobre apenas quem já tem conta — e país, onde
+    // a pergunta existir. Motivo, tese e sono continuam definindo o veredito e
+    // o TEXTO da oferta; não a existência dela.
+    const eligible = answers.jaTemBinance === "nao";
+    // Quando a decisão sobre a posição atual é urgente ou desconfortável, a
+    // oferta continua visível, mas o texto devolve a pessoa ao passo simples:
+    // resolver a posição que já existe vem antes de qualquer conta nova.
+    const decisaoVemPrimeiro =
+      answers.sono === "tira-o-sono" ||
+      answers.motivo === "necessidade" ||
+      answers.motivo === "medo" ||
+      answers.tese === "tese-mudou";
 
     const convertOverride = eligible
       ? {
           offerKey: "default",
-          tag: "Comparação opcional de plataforma",
-          headline: "Conta nova, somente se comparar outra plataforma fizer sentido",
-          sub: "A oferta apareceu porque você informou que usa outra corretora, não possui Binance e está apenas revisando a decisão, sem necessidade de liquidez, mudança de tese ou desconforto elevado.",
+          tag: decisaoVemPrimeiro ? "Depois de resolver a posição" : "Comparação opcional de plataforma",
+          headline: decisaoVemPrimeiro
+            ? "Primeiro a posição que você já tem; a conta pode esperar"
+            : "Conta nova, somente se comparar outra plataforma fizer sentido",
+          sub: decisaoVemPrimeiro
+            ? "A oferta aparece porque você ainda não tem conta na Binance, e ela é separada do que você veio resolver. O protocolo acima trata da posição atual — abrir conta não vende, não move e não decide nada por você. Volte aqui quando o passo de cima estiver resolvido."
+            : "A oferta aparece porque você informou que ainda não tem conta na Binance e está apenas revisando a decisão, sem necessidade de liquidez, mudança de tese ou desconforto elevado.",
           offers: [
             "Cadastre-se pelo link de indicação e receba cashback vitalício em parte das taxas elegíveis.",
             "Válido para contas novas e elegíveis.",
