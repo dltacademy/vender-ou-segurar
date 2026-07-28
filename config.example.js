@@ -17,8 +17,17 @@ const CONFIG = {
     "tg-ads": "https://www.binance.com/register?ref=BOSS2026",
   },
 
-  // Username do Telegram para contato/chamada (sem @)
-  telegramUsername: "SEU_USUARIO_TELEGRAM",
+  // Comunidade oficial da marca. Entra como brinde discreto ao lado da oferta
+  // e, no ramo sem oferta, sustenta sozinha a continuação — que aqui é o
+  // unico proximo passo, porque esta ferramenta nao tem aresta de guia.
+  // Nunca é contato pessoal: sempre grupo público.
+  community: {
+    url: "https://t.me/dltacademy",
+    label: "Entrar grátis no grupo →",
+    tag: "Grátis",
+    headline: "Continue com quem está no mesmo caminho",
+    sub: "Grupo aberto da DLT Academy: dúvidas, conteúdos novos e avisos de golpe. Sem custo e sem cadastro.",
+  },
 
   // Código de site do GoatCounter (goatcounter.com — grátis, sem cookies)
   goatCounterSite: "",

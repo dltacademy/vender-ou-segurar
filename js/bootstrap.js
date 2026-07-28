@@ -4,8 +4,10 @@ function gateUnavailableConversion(report) {
 
   const offerUrl = convert.hideRef ? "#" : getOfferLink(convert.offerKey || "default");
   const hasOffer = Boolean(offerUrl && offerUrl !== "#");
-  const hasTelegram = convert.publicTelegram === true && isTelegramConfigured();
-  if (hasOffer || hasTelegram) return report;
+  // A oferta e a unica coisa que torna o bloco de conversao disponivel. O
+  // grupo nao entra nesta conta: e gratuito e aparece de qualquer forma, como
+  // brinde ao lado da oferta ou em bloco proprio quando nao ha oferta.
+  if (hasOffer) return report;
 
   const routingLabels = new Set(["roteamento", "próximo passo"]);
   const stats = Array.isArray(report.stats)
