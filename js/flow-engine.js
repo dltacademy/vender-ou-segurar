@@ -303,16 +303,56 @@ function renderFlow(root, flow) {
       root.appendChild(conversionBlock);
       track(`roteador_resultado_${convert.offerKey || "default"}`);
     } else {
-      track("roteador_resultado_sem_oferta");
+      // Sem oferta, esta ferramenta terminava sem próximo passo nenhum: ela
+      // não tem aresta de guia como a Primeiros Passos. O grupo é a única
+      // continuação disponível aqui, e por isso entra destacado.
+      const communityBlock = renderCommunity();
+      if (communityBlock) {
+        root.appendChild(communityBlock);
+        track("roteador_resultado_comunidade");
+      } else {
+        track("roteador_resultado_sem_oferta");
+      }
     }
+  }
+
+  // Botão do grupo. Link externo, mas não afiliado: sem sponsored/nofollow,
+  // com o referrerpolicy que a política de segurança exige.
+  //
+  // O peso visual depende de quem está ao lado, e isso não é estilo: a oferta
+  // é a ação que sustenta o projeto. `.btn-telegram` (#26a5e4) tem contraste
+  // 7.20:1 com o fundo, contra 3.00:1 do `.btn-primary` (#1E4FD8) — solto ao
+  // lado da oferta, o brinde puxaria mais o olho que ela. Junto: discreto.
+  // Sozinho: destacado, porque ali não há nada para disputar.
+  function communityButton(destaque) {
+    const cfg = CONFIG.community;
+    const btn = element("a", destaque ? "btn btn-telegram" : "btn btn-secondary", cfg.label || "Entrar grátis no grupo →");
+    btn.href = getCommunityLink();
+    btn.target = "_blank";
+    btn.rel = "noopener noreferrer";
+    btn.referrerPolicy = "no-referrer";
+    btn.addEventListener("click", () => track("clique_comunidade"));
+    return btn;
+  }
+
+  function renderCommunity() {
+    if (!isCommunityConfigured()) return null;
+    const cfg = CONFIG.community;
+    const block = element("div", "card convert-block visible");
+    if (cfg.tag) block.appendChild(element("span", "tag s1", cfg.tag));
+    if (cfg.headline) block.appendChild(element("div", "convert-headline", cfg.headline));
+    if (cfg.sub) block.appendChild(element("div", "convert-sub", cfg.sub));
+    const actions = element("div", "btn-row");
+    actions.appendChild(communityButton(true)); // sozinho: é a ação da vez
+    block.appendChild(actions);
+    return block;
   }
 
   function renderConvert(config) {
     const offerKey = config.offerKey || "default";
     const offerUrl = config.hideRef ? "#" : getOfferLink(offerKey);
     const hasOffer = Boolean(offerUrl && offerUrl !== "#");
-    const hasTelegram = config.publicTelegram === true && isTelegramConfigured();
-    if (!hasOffer && !hasTelegram) return null;
+    if (!hasOffer) return null;
 
     const block = element("div", "card convert-block visible");
     if (config.tag) block.appendChild(element("span", "tag s2", config.tag));
@@ -336,13 +376,10 @@ function renderFlow(root, flow) {
       actions.appendChild(link);
     }
 
-    if (hasTelegram) {
-      const telegram = element("a", "btn btn-telegram", config.tgLabel || "Falar no Telegram");
-      telegram.href = getTelegramLink(config.tgPrefill || "");
-      telegram.target = "_blank";
-      telegram.rel = "nofollow noopener noreferrer";
-      telegram.referrerPolicy = "no-referrer";
-      actions.appendChild(telegram);
+    // Comunidade como brinde ao lado da oferta: gratuita e sem trava de
+    // elegibilidade, acompanha sem competir. hideCommunity suprime.
+    if (config.hideCommunity !== true && isCommunityConfigured()) {
+      actions.appendChild(communityButton(false));
     }
 
     block.appendChild(actions);
