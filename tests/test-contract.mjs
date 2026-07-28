@@ -16,7 +16,7 @@ const workflows = [
 
 const canonical = "https://vender-ou-segurar.dlt.academy/";
 const image = `${canonical}og-image.png`;
-assert.match(index, /<meta name="robots" content="noindex">/);
+assert.match(index, /<meta name="robots" content="index, follow">/);
 assert.match(robots, /^User-agent: \*\s+Allow: \/$/m);
 assert.match(index, /<meta name="referrer" content="no-referrer">/);
 assert.match(index, /Content-Security-Policy/);

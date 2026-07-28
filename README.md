@@ -21,9 +21,7 @@ Uma comparação opcional de plataforma só aparece no caso estreito em que a pe
 
 ## Estado de publicação
 
-A ferramenta permanece acessível para revisão, com indexação bloqueada por `<meta name="robots" content="noindex">`. O `robots.txt` usa `Allow: /` para que crawlers possam ler essa diretiva.
-
-O portal e o sitemap não são alterados neste lote.
+**No ar e indexável** em `https://vender-ou-segurar.dlt.academy/`, servindo `<meta name="robots" content="index, follow">`. O `robots.txt` mantém `Allow: /`, e a ferramenta já está registrada no portal e no `sitemap.xml`.
 
 ## Arquitetura
 
@@ -32,7 +30,7 @@ O portal e o sitemap não são alterados neste lote.
 - respostas processadas somente no navegador;
 - CSP restritiva e JavaScript executável somente em arquivos externos;
 - tracking opcional por `?c=<canal>&v=<variante>` com parâmetros sanitizados;
-- contato público desabilitado enquanto `telegramUsername` estiver vazio.
+- nenhum contato pessoal exposto: a ferramenta não pede nem armazena dado de contato.
 
 ## Testes
 
