@@ -30,7 +30,18 @@ Uma comparação opcional de plataforma só aparece no caso estreito em que a pe
 - respostas processadas somente no navegador;
 - CSP restritiva e JavaScript executável somente em arquivos externos;
 - tracking opcional por `?c=<canal>&v=<variante>` com parâmetros sanitizados;
-- nenhum contato pessoal exposto: a ferramenta não pede nem armazena dado de contato.
+- nenhum contato pessoal exposto: o único canal é o grupo público em `CONFIG.community`.
+
+## O que aparece no fim do resultado
+
+Nenhum ramo termina sem continuação. O que preenche o espaço depende do que a pessoa respondeu:
+
+| Ramo | O que aparece |
+|---|---|
+| Elegível à oferta | oferta em destaque **+** grupo grátis ao lado, discreto |
+| Sem oferta aplicável | grupo grátis em bloco próprio, em destaque |
+
+O peso visual segue quem está ao lado: a oferta é a ação que sustenta o projeto, então o brinde nunca disputa o clique com ela. Onde não há oferta a lógica se inverte — ali o grupo é a ação da vez. Antes desta regra, o ramo sem oferta terminava **sem próximo passo nenhum**, porque esta ferramenta não tem aresta de guia.
 
 ## Testes
 
