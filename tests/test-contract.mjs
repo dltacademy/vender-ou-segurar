@@ -15,7 +15,7 @@ const workflows = [
 ].join("\n");
 
 const canonical = "https://vender-ou-segurar.dlt.academy/";
-const image = `${canonical}og-image.png`;
+const image = `${canonical}og-image.svg`;
 assert.match(index, /<meta name="robots" content="index, follow">/);
 assert.match(robots, /^User-agent: \*\s+Allow: \/$/m);
 assert.match(index, /<meta name="referrer" content="no-referrer">/);
@@ -24,6 +24,12 @@ assert.equal(index.includes("unsafe-inline"), false);
 assert.equal(index.includes("unsafe-eval"), false);
 assert.equal(index.includes("meta name=\"keywords\""), false);
 assert.match(index, /<script src="js\/bootstrap\.js"><\/script>/);
+assert.match(index, /<link rel="stylesheet" href="dlt-patterns\.css">/);
+assert.match(index, /<script src="js\/dlt-interactions\.js"><\/script>/);
+assert.match(index, /class="hero tool-head"/);
+assert.match(index, /class="subtitle tool-promise"/);
+assert.match(index, /class="tool-facts"/);
+assert.match(index, /data-share/);
 assert.equal(/<script>(.|\n)*?<\/script>/.test(index), false);
 assert.match(index, new RegExp(`<link rel="canonical" href="${canonical}">`));
 assert.match(index, new RegExp(`<meta property="og:url" content="${canonical}">`));
@@ -36,6 +42,15 @@ const jsonLd = JSON.parse(jsonLdMatch[1]);
 assert.equal(jsonLd["@type"], "WebApplication");
 assert.equal(jsonLd.url, canonical);
 assert.equal(jsonLd.image, image);
+assert.match(engine, /flow-card/);
+assert.match(engine, /flow-option/);
+assert.match(engine, /result-hero/);
+assert.match(engine, /answer-record/);
+assert.match(engine, /result-actions/);
+assert.match(engine, /Baixar texto/);
+assert.match(engine, /cta-verdict/);
+assert.match(index, /class="privacy-line"/);
+assert.equal(/📋|📥|⚠️/.test(index + engine), false, "ícones de interface não devem usar emoji");
 
 for (const match of index.matchAll(/<a\b([^>]*?)href="(https?:[^"#]+)"([^>]*)>/g)) {
   const attributes = `${match[1]} ${match[3]}`;
