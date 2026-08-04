@@ -277,7 +277,9 @@ const FLOW = {
       answers.motivo === "medo" ||
       answers.tese === "tese-mudou";
 
-    const convertOverride = eligible
+    const resultadoPedeContencao = decisaoVemPrimeiro || answers.tese === "sem-tese";
+
+    const convertOverride = eligible && !resultadoPedeContencao
       ? {
           offerKey: "default",
           tag: decisaoVemPrimeiro ? "Depois de resolver a posição" : "Comparação opcional de plataforma",
@@ -305,7 +307,7 @@ const FLOW = {
       stats: [
         { value: answers.variacao === "lucro" ? "Lucro" : answers.variacao === "prejuizo" ? "Prejuízo" : "Incerto", label: "situação informada" },
         { value: answers.corretora === "binance" ? "Binance" : answers.corretora === "outra" ? "Outra corretora" : "Carteira própria", label: "onde está" },
-        { value: eligible ? "Oferta opcional" : "Sem oferta", label: "roteamento" },
+        { value: eligible && !resultadoPedeContencao ? "Oferta opcional" : "Sem oferta", label: "roteamento" },
       ],
       findings,
       plan,
