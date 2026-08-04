@@ -23,6 +23,17 @@ function renderFlow(root, flow) {
     return step.fields.filter((field) => !field.showIf || field.showIf(answers));
   }
 
+  function visibleQuestions() {
+    const questions = [];
+    flow.steps.forEach((step) => {
+      if (step.showIf && !step.showIf(answers)) return;
+      visibleFields(step).forEach((field) => {
+        questions.push({ ...field, sectionTitle: step.title, sectionDescription: step.description });
+      });
+    });
+    return questions;
+  }
+
   function renderProgress(container, steps) {
     const progress = element("div", "flow-progress");
     steps.forEach((_, index) => {
@@ -85,12 +96,12 @@ function renderFlow(root, flow) {
       });
       wrapper.appendChild(input);
     } else if (field.type === "radio") {
-      const group = element("div", "radio-group");
+      const group = element("div", "radio-group flow-options");
       group.setAttribute("role", "group");
       group.setAttribute("aria-label", field.label);
       field.options.forEach((option) => {
         const value = option.value !== undefined ? option.value : option;
-        const button = element("button", "", option.label !== undefined ? option.label : option);
+        const button = element("button", "flow-option", option.label !== undefined ? option.label : option);
         button.type = "button";
         const selected = answers[field.id] === value;
         button.classList.toggle("selected", selected);
@@ -112,32 +123,41 @@ function renderFlow(root, flow) {
     container.appendChild(wrapper);
   }
 
-  function missingRequiredField(step) {
-    for (const field of visibleFields(step)) {
-      const value = answers[field.id];
-      if (field.required && (value === undefined || value === null || value === "")) {
-        return field.label;
-      }
+  function missingRequiredField(field) {
+    const value = answers[field.id];
+    if (field.required && (value === undefined || value === null || value === "")) {
+      return field.label;
     }
     return null;
   }
 
+  function resetFlow() {
+    flow.steps.forEach((step) => step.fields.forEach((field) => {
+      delete answers[field.id];
+      if (field.value !== undefined) answers[field.id] = field.value;
+    }));
+    stepIndex = 0;
+    track("flow_reset");
+    renderStep();
+  }
+
   function renderStep() {
     root.replaceChildren();
-    const steps = visibleSteps();
-    if (stepIndex >= steps.length) stepIndex = Math.max(0, steps.length - 1);
-    const step = steps[stepIndex];
-    if (!step) return;
+    const questions = visibleQuestions();
+    if (stepIndex >= questions.length) stepIndex = Math.max(0, questions.length - 1);
+    const question = questions[stepIndex];
+    if (!question) return;
 
-    const card = element("div", "card");
-    renderProgress(card, steps);
-    card.appendChild(element("h2", "", step.title));
-    if (step.description) card.appendChild(element("p", "section-desc", step.description));
+    const card = element("div", "card flow-card");
+    renderProgress(card, questions);
+    card.appendChild(element("p", "flow-kicker", question.sectionTitle));
+    card.appendChild(element("h2", "", question.label));
+    if (question.sectionDescription) card.appendChild(element("p", "section-desc flow-help", question.sectionDescription));
 
     const grid = element("div", "control-grid");
-    const dynamic = step.fields.some((field) => field.showIf) || flow.steps.some((item) => item.showIf);
+    const dynamic = question.showIf || flow.steps.some((item) => item.showIf || item.fields.some((field) => field.showIf));
     const onDynamicChange = dynamic ? renderStep : () => {};
-    visibleFields(step).forEach((field) => renderField(field, grid, onDynamicChange));
+    renderField(question, grid, onDynamicChange);
     card.appendChild(grid);
 
     const error = element("p", "form-error");
@@ -150,6 +170,7 @@ function renderFlow(root, flow) {
     if (stepIndex > 0) {
       const back = element("button", "btn-secondary", "← Voltar");
       back.type = "button";
+      back.setAttribute("aria-label", "Voltar à pergunta anterior");
       back.addEventListener("click", () => {
         stepIndex -= 1;
         renderStep();
@@ -157,11 +178,17 @@ function renderFlow(root, flow) {
       actions.appendChild(back);
     }
 
-    const last = stepIndex === steps.length - 1;
+    const restart = element("button", "btn-secondary", "Reiniciar");
+    restart.type = "button";
+    restart.setAttribute("aria-label", "Reiniciar o questionário");
+    restart.addEventListener("click", resetFlow);
+    actions.appendChild(restart);
+
+    const last = stepIndex === questions.length - 1;
     const next = element("button", "btn-primary", last ? flow.reportLabel || "Gerar meu plano →" : "Continuar →");
     next.type = "button";
     next.addEventListener("click", () => {
-      const missing = missingRequiredField(step);
+      const missing = missingRequiredField(question);
       if (missing) {
         error.textContent = `Preencha: ${missing}`;
         error.hidden = false;
@@ -198,34 +225,78 @@ function renderFlow(root, flow) {
     return lines.join("\n");
   }
 
+  function downloadTextFile(filename, content) {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  function readableAnswer(field) {
+    const value = answers[field.id];
+    if (value === undefined || value === null || value === "") return "Não respondido";
+    if (field.type === "radio" && field.options) {
+      const option = field.options.find((item) => (item.value !== undefined ? item.value : item) === value);
+      if (option) return option.label !== undefined ? option.label : String(option);
+    }
+    if (field.format) return String(field.format(value));
+    return String(value);
+  }
+
+  function renderAnswerRecord() {
+    const record = element("section", "answer-record");
+    record.appendChild(element("h2", "", "Suas respostas"));
+    flow.steps.forEach((step) => step.fields.forEach((field) => {
+      const item = element("div", "answer-item");
+      item.appendChild(element("p", "answer-q", field.label));
+      item.appendChild(element("p", "answer-a", readableAnswer(field)));
+      record.appendChild(item);
+    }));
+    return record;
+  }
+
   function renderReport() {
     const report = flow.buildReport({ ...answers });
     const convert = report.convertOverride !== undefined ? report.convertOverride : flow.convert;
     track("relatorio_gerado");
     root.replaceChildren();
 
-    const card = element("div", "card");
+    const card = element("div", "card result-card");
     card.appendChild(element("h2", "", flow.reportTitle || "Seu plano"));
 
     if (report.headline) {
-      const banner = element("div", `result-banner ${report.tone === "bad" ? "bad" : "good"}`);
+      const banner = element("div", `result-hero result-banner ${report.tone === "bad" ? "is-alert bad" : "good"}`);
+      const top = element("div", "result-top");
       const inner = element("div");
-      inner.appendChild(element("div", "big-stat", report.headline));
-      if (report.sublabel) inner.appendChild(element("div", "stat-label", report.sublabel));
-      banner.appendChild(inner);
+      inner.appendChild(element("p", "result-kicker", report.tone === "bad" ? "Atenção ao próximo passo" : "Leitura do seu protocolo"));
+      inner.appendChild(element("h2", "result-big big-stat", report.headline));
+      top.appendChild(inner);
+      if (report.sublabel) top.appendChild(element("p", "result-read stat-label", report.sublabel));
+      banner.appendChild(top);
       card.appendChild(banner);
     }
 
     if (report.stats && report.stats.length) {
-      const row = element("div", "stat-row");
-      report.stats.forEach((stat) => {
+      const row = element("div", "result-stats stat-row");
+      report.stats.slice(0, 3).forEach((stat) => {
         const box = element("div", "stat-box");
-        box.appendChild(element("div", "val", stat.value));
-        box.appendChild(element("div", "label", stat.label));
+        box.appendChild(element("strong", "val", stat.value));
+        box.appendChild(element("span", "label", stat.label));
         row.appendChild(box);
       });
       card.appendChild(row);
     }
+
+    card.appendChild(renderAnswerRecord());
+    const resultActions = element("section", "result-actions");
+    resultActions.appendChild(element("h3", "result-actions-title", "Leve este protocolo para a próxima decisão"));
+    resultActions.appendChild(element("p", "", "Marque as etapas, copie o resumo ou baixe um card. Nada é enviado para um servidor."));
 
     if (report.findings && report.findings.length) {
       const list = element("div", "report-findings");
@@ -256,30 +327,30 @@ function renderFlow(root, flow) {
       });
       card.appendChild(list);
 
-      const copy = element("button", "btn-secondary", "📋 Copiar plano");
+      const copy = element("button", "btn btn-secondary", "Copiar protocolo");
       copy.type = "button";
       copy.addEventListener("click", async () => {
         try {
           await navigator.clipboard.writeText(planAsText(report, convert));
-          copy.textContent = "✓ Copiado";
-          setTimeout(() => { copy.textContent = "📋 Copiar plano"; }, 1500);
+          copy.textContent = "Copiado";
+          setTimeout(() => { copy.textContent = "Copiar protocolo"; }, 1500);
           track("copiar_plano");
         } catch (_) {
           copy.textContent = "Não foi possível copiar";
         }
       });
-      const row = element("div", "btn-row");
+      const row = element("div", "result-actions-row");
       row.appendChild(copy);
-      card.appendChild(row);
+      resultActions.appendChild(row);
     }
 
     if (report.extraText) {
       card.appendChild(element("p", "section-desc report-extra", report.extraText));
     }
 
-    const actions = element("div", "btn-row");
+    const actions = element("div", "result-actions-row");
     if (report.shareCard) {
-      const download = element("button", "btn-secondary", "📥 Baixar card do resultado");
+      const download = element("button", "btn btn-secondary", "Baixar card do resultado");
       download.type = "button";
       download.addEventListener("click", () => {
         const canvas = generateCard({ format: "square", ...report.shareCard });
@@ -288,14 +359,17 @@ function renderFlow(root, flow) {
       });
       actions.appendChild(download);
     }
-    const restart = element("button", "btn-secondary", "↺ Refazer");
+    const textDownload = element("button", "btn btn-secondary", "Baixar texto");
+    textDownload.type = "button";
+    textDownload.addEventListener("click", () => downloadTextFile(`${flow.slug || "protocolo"}-resultado.txt`, planAsText(report, convert)));
+    actions.appendChild(textDownload);
+    const restart = element("button", "btn btn-secondary", "Refazer");
     restart.type = "button";
-    restart.addEventListener("click", () => {
-      stepIndex = 0;
-      renderStep();
-    });
+    restart.addEventListener("click", resetFlow);
     actions.appendChild(restart);
-    card.appendChild(actions);
+    resultActions.appendChild(actions);
+    resultActions.appendChild(element("p", "privacy-line", "Privacidade: suas respostas e o resultado permanecem nesta página e não são enviados para a DLT Academy."));
+    card.appendChild(resultActions);
     root.appendChild(card);
 
     const conversionBlock = convert ? renderConvert(convert) : null;
@@ -338,7 +412,7 @@ function renderFlow(root, flow) {
   function renderCommunity() {
     if (!isCommunityConfigured()) return null;
     const cfg = CONFIG.community;
-    const block = element("div", "card convert-block visible");
+    const block = element("div", "card next-step cta-verdict convert-block visible");
     if (cfg.tag) block.appendChild(element("span", "tag s1", cfg.tag));
     if (cfg.headline) block.appendChild(element("div", "convert-headline", cfg.headline));
     if (cfg.sub) block.appendChild(element("div", "convert-sub", cfg.sub));
@@ -354,7 +428,7 @@ function renderFlow(root, flow) {
     const hasOffer = Boolean(offerUrl && offerUrl !== "#");
     if (!hasOffer) return null;
 
-    const block = element("div", "card convert-block visible");
+    const block = element("div", "card offer cta-verdict convert-block visible");
     if (config.tag) block.appendChild(element("span", "tag s2", config.tag));
     block.appendChild(element("div", "convert-headline", config.headline));
     if (config.sub) block.appendChild(element("div", "convert-sub", config.sub));
