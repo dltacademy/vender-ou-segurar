@@ -15,8 +15,8 @@
 <meta property="og:title" content="Vender ou Segurar? — organize sua decisão">
 <meta property="og:description" content="Separe emoção, risco real e necessidade de liquidez antes de decidir o que fazer com uma posição em cripto.">
 <meta property="og:url" content="https://vender-ou-segurar.dlt.academy/">
-<meta property="og:image" content="https://vender-ou-segurar.dlt.academy/og-image.png">
-<meta property="og:image:type" content="image/png">
+<meta property="og:image" content="https://vender-ou-segurar.dlt.academy/og-image.svg">
+<meta property="og:image:type" content="image/svg+xml">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Vender ou Segurar? — ferramenta educacional da DLT Academy">
@@ -25,13 +25,14 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Vender ou Segurar? — organize sua decisão">
 <meta name="twitter:description" content="Separe emoção, risco real e necessidade de liquidez antes de decidir o que fazer com uma posição em cripto.">
-<meta name="twitter:image" content="https://vender-ou-segurar.dlt.academy/og-image.png">
+<meta name="twitter:image" content="https://vender-ou-segurar.dlt.academy/og-image.svg">
 <meta name="twitter:image:alt" content="Vender ou Segurar? — ferramenta educacional da DLT Academy">
 
 <meta name="theme-color" content="#06090F">
 <link rel="icon" type="image/png" href="assets/dlt-mark.png">
 <link rel="stylesheet" href="styles-base.css">
 <link rel="stylesheet" href="styles-tool.css">
+<link rel="stylesheet" href="dlt-patterns.css">
 
 <script type="application/ld+json">
 {
@@ -44,7 +45,7 @@
   "operatingSystem": "Web",
   "inLanguage": "pt-BR",
   "isAccessibleForFree": true,
-  "image": "https://vender-ou-segurar.dlt.academy/og-image.png",
+  "image": "https://vender-ou-segurar.dlt.academy/og-image.svg",
   "offers": { "@type": "Offer", "price": 0, "priceCurrency": "BRL" },
   "publisher": { "@type": "Organization", "name": "DLT Academy", "url": "https://dlt.academy/" }
 }
@@ -58,13 +59,16 @@
 </header>
 
 <main id="top">
-  <div class="wrap">
-    <section class="hero">
+  <div class="wrap tool-shell">
+    <section class="hero tool-head">
       <span class="disclaimer-badge">Ferramenta educacional · não é recomendação de investimento</span>
       <h1 id="headline">Vender ou Segurar?</h1>
-      <p class="subtitle" id="subheadline">Organize emoção, risco e necessidade financeira antes de revisar sua posição.</p>
+      <p class="subtitle tool-promise" id="subheadline">Organize emoção, risco e necessidade financeira antes de revisar sua posição.</p>
+      <ul class="tool-facts" aria-label="Como funciona"><li>6 perguntas · cerca de 2 min</li><li>Sem cadastro</li><li>Resultado educacional local</li></ul>
+      <p class="privacy-line">Privacidade: não coletamos sua posição, suas respostas ou qualquer dado de conta.</p>
       <div id="flow-root"></div>
     </section>
+    <section class="share-row" data-share><p>Compartilhe o protocolo — sem compartilhar sua posição.</p><div class="share-actions"><button type="button" data-share-copy>Copiar link</button><a data-share-telegram target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Telegram</a><a data-share-whatsapp target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">WhatsApp</a></div></section>
   </div>
 </main>
 
@@ -82,5 +86,6 @@
 <script src="js/flow-engine.js"></script>
 <script src="js/flow.js"></script>
 <script src="js/bootstrap.js"></script>
+<script src="js/dlt-interactions.js"></script>
 </body>
 </html>
