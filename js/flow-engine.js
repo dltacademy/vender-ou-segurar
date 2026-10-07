@@ -199,7 +199,7 @@ function renderFlow(root, flow) {
         renderReport();
       } else {
         stepIndex += 1;
-        track(`flow_passo_${stepIndex + 1}`);
+        track("flow_passo");
         renderStep();
       }
     });
@@ -372,10 +372,11 @@ function renderFlow(root, flow) {
     card.appendChild(resultActions);
     root.appendChild(card);
 
+    // Evento fixo e único: o nome nunca revela o ramo a que as respostas levaram.
+    track("roteador_resultado");
     const conversionBlock = convert ? renderConvert(convert) : null;
     if (conversionBlock) {
       root.appendChild(conversionBlock);
-      track(`roteador_resultado_${convert.offerKey || "default"}`);
     } else {
       // Sem oferta, esta ferramenta terminava sem próximo passo nenhum: ela
       // não tem aresta de guia como a Primeiros Passos. O grupo é a única
@@ -383,9 +384,6 @@ function renderFlow(root, flow) {
       const communityBlock = renderCommunity();
       if (communityBlock) {
         root.appendChild(communityBlock);
-        track("roteador_resultado_comunidade");
-      } else {
-        track("roteador_resultado_sem_oferta");
       }
     }
   }
