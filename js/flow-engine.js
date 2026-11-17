@@ -96,22 +96,22 @@ function renderFlow(root, flow) {
       });
       wrapper.appendChild(input);
     } else if (field.type === "radio") {
-      const group = element("div", "radio-group flow-options");
+      // Escolha em linha (.choice-row, bloco 36 do dlt-patterns.css): o estado vai em aria-pressed.
+      const group = element("div", "choice-list");
       group.setAttribute("role", "group");
       group.setAttribute("aria-label", field.label);
       field.options.forEach((option) => {
         const value = option.value !== undefined ? option.value : option;
-        const button = element("button", "flow-option", option.label !== undefined ? option.label : option);
+        const button = element("button", "choice-row flow-option");
         button.type = "button";
+        button.appendChild(element("span", "choice-dot"));
+        button.appendChild(element("span", "", option.label !== undefined ? option.label : option));
         const selected = answers[field.id] === value;
-        button.classList.toggle("selected", selected);
         button.setAttribute("aria-pressed", String(selected));
         button.addEventListener("click", () => {
           answers[field.id] = value;
           group.querySelectorAll("button").forEach((peer) => {
-            const isSelected = peer === button;
-            peer.classList.toggle("selected", isSelected);
-            peer.setAttribute("aria-pressed", String(isSelected));
+            peer.setAttribute("aria-pressed", String(peer === button));
           });
           onDynamicChange();
         });
@@ -271,7 +271,9 @@ function renderFlow(root, flow) {
     card.appendChild(element("h2", "", flow.reportTitle || "Seu plano"));
 
     if (report.headline) {
-      const banner = element("div", `result-hero result-banner ${report.tone === "bad" ? "is-alert bad" : "good"}`);
+      // Estado como grau da escala de 4 (bloco 34): "good" = grau 1 (verde), "bad" = grau 4 (vermelho).
+      const banner = element("div", "result-hero result-banner");
+      banner.dataset.grade = report.tone === "bad" ? "4" : "1";
       const top = element("div", "result-top");
       const inner = element("div");
       inner.appendChild(element("p", "result-kicker", report.tone === "bad" ? "Atenção ao próximo passo" : "Leitura do seu protocolo"));
@@ -286,8 +288,8 @@ function renderFlow(root, flow) {
       const row = element("div", "result-stats stat-row");
       report.stats.slice(0, 3).forEach((stat) => {
         const box = element("div", "stat-box");
-        box.appendChild(element("strong", "val", stat.value));
         box.appendChild(element("span", "label", stat.label));
+        box.appendChild(element("strong", "val tnum", stat.value));
         row.appendChild(box);
       });
       card.appendChild(row);
