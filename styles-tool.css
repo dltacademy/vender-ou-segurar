@@ -61,3 +61,12 @@
 /* O registro de respostas (bloco 30) é uma superfície própria quando está sozinho; dentro do
    cartão de resultado ele vira só uma lista com separadores. */
 .result-card .answer-record { background: none; border: 0; border-radius: 0; padding: 20px 0 0; margin: 0 0 20px; }
+
+/* Erro do formulário ("Preencha: ..."): mesma forma do quanto-em-taxas, filete e texto em vermelho. */
+.form-error {
+  border-left: 3px solid var(--red);
+  color: var(--red);
+  font-size: 15px;
+  margin: 0 0 12px;
+  padding: 4px 0 4px 12px;
+}
