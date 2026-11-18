@@ -23,9 +23,10 @@ assert.match(index, /Content-Security-Policy/);
 assert.equal(index.includes("unsafe-inline"), false);
 assert.equal(index.includes("unsafe-eval"), false);
 assert.equal(index.includes("meta name=\"keywords\""), false);
-assert.match(index, /<script src="js\/bootstrap\.js"><\/script>/);
-assert.match(index, /<link rel="stylesheet" href="dlt-patterns\.css">/);
-assert.match(index, /<script src="js\/dlt-interactions\.js"><\/script>/);
+// Os assets podem levar ?v=AAAA-MM-DDx, que força o navegador a buscar a versão nova.
+assert.match(index, /<script src="js\/bootstrap\.js(?:\?v=[\w.-]+)?"><\/script>/);
+assert.match(index, /<link rel="stylesheet" href="dlt-patterns\.css(?:\?v=[\w.-]+)?">/);
+assert.match(index, /<script src="js\/dlt-interactions\.js(?:\?v=[\w.-]+)?"><\/script>/);
 assert.match(index, /class="hero tool-head"/);
 assert.match(index, /class="subtitle tool-promise"/);
 assert.match(index, /class="tool-facts"/);
